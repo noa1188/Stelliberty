@@ -4,6 +4,7 @@ import 'package:screen_retriever/screen_retriever.dart';
 import 'package:stelliberty/storage/preferences.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'logger.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 // 窗口状态管理器，负责窗口尺寸、位置及最大化状态的持久化
 class WindowStateManager {
@@ -105,7 +106,7 @@ class WindowStateManager {
             if (state.isMaximized) {
               await windowManager.maximize();
             }
-            await windowManager.show();
+            appWindow.show();
           } catch (e) {
             Logger.error("显示窗口失败：$e");
           }
@@ -118,7 +119,7 @@ class WindowStateManager {
       await windowManager.setSize(_defaultSize);
       await windowManager.waitUntilReadyToShow();
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await windowManager.show();
+        appWindow.show();
       });
     }
   }

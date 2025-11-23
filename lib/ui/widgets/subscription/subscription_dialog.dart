@@ -458,10 +458,7 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
               child: Icon(icon, size: 16),
             ),
             prefixIconConstraints: maxLines > 1
-                ? const BoxConstraints(
-                    minWidth: 48,
-                    minHeight: 48,
-                  )
+                ? const BoxConstraints(minWidth: 48, minHeight: 48)
                 : null,
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(

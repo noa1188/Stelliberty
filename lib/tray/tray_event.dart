@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/clash/manager/manager.dart';
 import 'package:stelliberty/clash/providers/clash_provider.dart';
@@ -109,14 +110,13 @@ class TrayEventHandler with TrayListener {
       if (shouldMaximize) {
         await windowManager.maximize();
       }
-
-      await windowManager.show();
       final opacity = await windowManager.getOpacity();
       if (opacity < 1.0) {
         await windowManager.setOpacity(1.0);
         Logger.info('窗口透明度已恢复');
       }
-      await windowManager.focus();
+
+      appWindow.show();
 
       Logger.info('窗口已显示 (最大化：$shouldMaximize)');
     } catch (e) {

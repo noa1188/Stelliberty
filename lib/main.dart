@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 import 'package:rinf/rinf.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 // App Core & Services
 import 'package:stelliberty/clash/manager/manager.dart';
@@ -39,6 +39,7 @@ import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/utils/single_instance.dart';
 import 'package:stelliberty/utils/window_state.dart';
 import 'package:stelliberty/dev_test/test_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 void main(List<String> args) async {
   // 确保 Flutter 绑定已初始化
@@ -114,7 +115,11 @@ void main(List<String> args) async {
     ),
   );
   // 加载窗口状态
-  await WindowStateManager.loadAndApplyState(forceSilent: isSilentStart);
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    doWhenWindowReady(() async {
+      await WindowStateManager.loadAndApplyState(forceSilent: isSilentStart);
+    });
+  }
 }
 
 // ============================================================================
@@ -178,7 +183,6 @@ Future<void> initializeWindowServices() async {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await Window.initialize();
     await windowManager.ensureInitialized();
-    await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
     await Window.hideWindowControls();
     await AppTrayManager().initialize();
   }
