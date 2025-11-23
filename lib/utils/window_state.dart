@@ -3,7 +3,6 @@ import 'package:window_manager/window_manager.dart';
 import 'package:stelliberty/storage/preferences.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'logger.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 // 窗口状态管理器，负责窗口尺寸、位置及最大化状态的持久化
 class WindowStateManager {
@@ -29,7 +28,7 @@ class WindowStateManager {
   static Future<void> loadAndApplyState({bool forceSilent = false}) async {
     try {
       // 设置窗口最小尺寸
-      appWindow.minSize = _minSize;
+      await windowManager.setMinimumSize(_minSize);
       await windowManager.setTitle(
         LocaleSettings.instance.currentTranslations.common.appName,
       );
