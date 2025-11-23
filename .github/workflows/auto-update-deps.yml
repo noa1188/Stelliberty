@@ -7,9 +7,11 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-deps:
+    name: 自动更新依赖
     runs-on: ubuntu-latest
 
     steps:
@@ -26,6 +28,16 @@ jobs:
 
       - name: 配置 Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: 安装 Flutter 依赖
+        run: flutter pub get
+
+      - name: 安装预构建脚本依赖
+        run: dart pub get
+        working-directory: scripts
+
+      - name: 运行预构建脚本
+        run: dart run scripts/prebuild.dart
 
       - name: 更新 Flutter 依赖
         run: |
@@ -56,18 +68,46 @@ jobs:
         if: steps.check_deps.outputs.has_changes == 'true'
         run: cargo check --manifest-path native/hub/Cargo.toml
 
-      - name: 提交并推送变更
+      - name: 创建 Pull Request
         if: steps.check_deps.outputs.has_changes == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          if git diff --cached --quiet; then
-            echo "✅ 没有实际变更，跳过提交。"
-          else
-            git commit -m "chore(deps): 自动更新 Flutter 与 Rust 依赖"
-            git push
-          fi
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(deps): 自动更新 Flutter 与 Rust 依赖"
+          branch: auto-update-deps
+          delete-branch: true
+          title: "🔄 自动更新依赖"
+          body: |
+            ## 📦 依赖更新摘要
+            
+            此 PR 由 GitHub Actions 自动创建，包含以下更新：
+            
+            ### 更新内容
+            - ✅ Flutter 依赖已更新到最新兼容版本
+            - ✅ Rust 依赖已更新到最新版本
+            - ✅ 已重新生成 Rust 桥接代码
+            - ✅ 已重新生成多语言文件
+            - ✅ 已通过 `flutter analyze` 检查
+            - ✅ 已通过 `cargo check` 检查
+            
+            ### 📋 变更文件
+            - `pubspec.lock` - Flutter 依赖锁定文件
+            - `native/hub/Cargo.lock` - Rust 依赖锁定文件
+            - 自动生成的代码文件
+            
+            ### ⚠️ 审查建议
+            请在合并前检查：
+            1. 查看依赖版本变化是否合理
+            2. 确认没有引入破坏性更改
+            3. 如有必要，进行本地测试
+            
+            ---
+            
+            💡 **提示**: 如果此 PR 没有问题，可以直接合并。如果有问题，可以关闭此 PR，依赖更新将在下次定时任务时重新尝试。
+          labels: |
+            dependencies
+            automated
+          assignees: ${{ github.repository_owner }}
 
       - name: 无需更新
         if: steps.check_deps.outputs.has_changes == 'false'

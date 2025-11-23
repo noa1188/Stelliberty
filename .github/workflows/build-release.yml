@@ -272,15 +272,14 @@ jobs:
           Write-Host "  ➤ 安装 Flutter 主项目依赖"
           flutter pub get
           
-          Write-Host "  ➤ 安装预编译脚本依赖"
-          cd scripts
-          flutter pub get
-          cd ..
-          
           Write-Host "  ➤ 安装 rinf_cli"
           cargo install rinf_cli
           
           Write-Host "✅ 所有依赖安装完成"
+
+      - name: 安装预构建脚本依赖
+        run: dart pub get
+        working-directory: scripts
 
       - name: 运行预构建脚本
         id: prebuild
