@@ -46,7 +46,7 @@ class WindowEffectProvider extends ChangeNotifier {
       case AppWindowEffect.acrylic:
         final isDark = _brightness == Brightness.dark;
         return isDark
-            ? Colors.black.withAlpha(51) // ~20% black
+            ? Colors.black.withAlpha(80) // ~20% black
             : Colors.white.withAlpha(100); // ~20% white
       case AppWindowEffect.mica:
       case AppWindowEffect.tabbed:

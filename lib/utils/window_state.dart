@@ -30,7 +30,7 @@ class WindowStateManager {
   static Future<void> loadAndApplyState({bool forceSilent = false}) async {
     try {
       // 设置窗口最小尺寸
-      await windowManager.setMinimumSize(_minSize);
+      appWindow.minSize = _minSize;
       await windowManager.setTitle(
         LocaleSettings.instance.currentTranslations.common.appName,
       );
