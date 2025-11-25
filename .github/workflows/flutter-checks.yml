@@ -61,4 +61,8 @@ jobs:
           echo "✅ Dart 代码格式检查通过"
 
       - name: 运行 Flutter 静态分析
-        run: flutter analyze
+        shell: bash
+        run: |
+          # 创建 assets 目录避免警告
+          mkdir -p assets/icons assets/clash-core/data assets/service
+          flutter analyze
