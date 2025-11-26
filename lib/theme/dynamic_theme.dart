@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:stelliberty/providers/theme_provider.dart';
 import 'package:stelliberty/providers/window_effect_provider.dart';
+import 'package:stelliberty/ui/widgets/modern_toast.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 
 // 动态主题应用根组件,监听主题状态变更并重建 MaterialApp
@@ -25,6 +26,7 @@ class DynamicThemeApp extends StatelessWidget {
         return SystemThemeBuilder(
           builder: (context, accent) {
             return MaterialApp(
+              navigatorKey: ModernToast.navigatorKey,
               locale: TranslationProvider.of(context).flutterLocale,
               supportedLocales: AppLocaleUtils.supportedLocales,
               localizationsDelegates: GlobalMaterialLocalizations.delegates,

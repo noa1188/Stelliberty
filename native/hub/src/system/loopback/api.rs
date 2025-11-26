@@ -246,8 +246,23 @@ pub fn set_loopback_exemption_by_sid(sid_bytes: &[u8], enabled: bool) -> Result<
             log::info!("回环豁免设置成功(SID：{})", sid_string);
             Ok(())
         } else {
-            log::error!("回环豁免设置失败(SID：{})：{}", sid_string, result);
-            Err(format!("设置回环豁免失败：{}", result))
+            let error_code = result as u32;
+            let error_msg = format!(
+                "设置回环豁免失败 (错误码: 0x{:08X}, 十进制: {})",
+                error_code, error_code
+            );
+            log::error!("{} (SID：{})", error_msg, sid_string);
+            
+            // 添加常见错误码的解释
+            let error_detail = match error_code {
+                0x80070005 => "拒绝访问 (ERROR_ACCESS_DENIED) - 可能需要管理员权限",
+                0x80070057 => "参数无效 (ERROR_INVALID_PARAMETER) - SID 格式可能有问题",
+                0x80004005 => "未指定的错误 (E_FAIL) - 系统保护的包或策略限制",
+                _ => "未知错误",
+            };
+            
+            log::error!("错误详情：{}", error_detail);
+            Err(format!("{} - {}", error_msg, error_detail))
         }
     }
 }
@@ -338,8 +353,23 @@ pub fn set_loopback_exemption(package_family_name: &str, enabled: bool) -> Resul
             log::info!("回环豁免设置成功");
             Ok(())
         } else {
-            log::error!("回环豁免设置失败：{}", result);
-            Err(format!("设置回环豁免失败：{}", result))
+            let error_code = result as u32;
+            let error_msg = format!(
+                "设置回环豁免失败 (错误码: 0x{:08X}, 十进制: {})",
+                error_code, error_code
+            );
+            log::error!("{}", error_msg);
+            
+            // 添加常见错误码的解释
+            let error_detail = match error_code {
+                0x80070005 => "拒绝访问 (ERROR_ACCESS_DENIED) - 可能需要管理员权限",
+                0x80070057 => "参数无效 (ERROR_INVALID_PARAMETER) - SID 格式可能有问题",
+                0x80004005 => "未指定的错误 (E_FAIL) - 系统保护的包或策略限制",
+                _ => "未知错误",
+            };
+            
+            log::error!("错误详情：{}", error_detail);
+            Err(format!("{} - {}", error_msg, error_detail))
         }
     }
 }

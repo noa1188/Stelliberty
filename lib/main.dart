@@ -29,6 +29,7 @@ import 'package:stelliberty/clash/providers/service_provider.dart';
 import 'package:stelliberty/providers/content_provider.dart';
 import 'package:stelliberty/providers/theme_provider.dart';
 import 'package:stelliberty/providers/window_effect_provider.dart';
+import 'package:stelliberty/providers/app_update_provider.dart';
 import 'package:stelliberty/clash/data/override_model.dart' as app_override;
 import 'package:stelliberty/src/bindings/signals/signals.dart';
 
@@ -110,6 +111,7 @@ void main(List<String> args) async {
         ChangeNotifierProvider(create: (_) => ContentProvider()),
         ChangeNotifierProvider.value(value: providers.themeProvider),
         ChangeNotifierProvider.value(value: providers.windowEffectProvider),
+        ChangeNotifierProvider.value(value: providers.appUpdateProvider),
       ],
       child: TranslationProvider(child: const BasicLayout()),
     ),
@@ -135,6 +137,7 @@ class ProviderBundle {
   final ClashProvider clashProvider;
   final LogProvider logProvider;
   final ServiceProvider serviceProvider;
+  final AppUpdateProvider appUpdateProvider;
 
   const ProviderBundle({
     required this.themeProvider,
@@ -144,6 +147,7 @@ class ProviderBundle {
     required this.clashProvider,
     required this.logProvider,
     required this.serviceProvider,
+    required this.appUpdateProvider,
   });
 }
 
@@ -231,6 +235,7 @@ Future<ProviderBundle> createProviders(String appDataPath) async {
   final clashProvider = ClashProvider();
   final logProvider = LogProvider();
   final serviceProvider = ServiceProvider();
+  final appUpdateProvider = AppUpdateProvider();
 
   // 并行初始化无依赖的 Providers
   await Future.wait([
@@ -239,6 +244,7 @@ Future<ProviderBundle> createProviders(String appDataPath) async {
     subscriptionProvider.initialize(appDataPath),
     overrideProvider.initialize(),
     serviceProvider.initialize(),
+    appUpdateProvider.initialize(),
   ]);
 
   // 初始化有依赖的 Providers
@@ -254,6 +260,7 @@ Future<ProviderBundle> createProviders(String appDataPath) async {
     clashProvider: clashProvider,
     logProvider: logProvider,
     serviceProvider: serviceProvider,
+    appUpdateProvider: appUpdateProvider,
   );
 }
 
@@ -376,5 +383,6 @@ Future<ProviderBundle> createFallbackProviders() async {
     clashProvider: ClashProvider(),
     logProvider: LogProvider(),
     serviceProvider: ServiceProvider(),
+    appUpdateProvider: AppUpdateProvider(),
   );
 }

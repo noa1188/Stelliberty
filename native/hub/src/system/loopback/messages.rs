@@ -168,7 +168,7 @@ impl SaveLoopbackConfiguration {
                 );
 
                 if let Err(e) = api::set_loopback_exemption_by_sid(&container.sid, should_enable) {
-                    log::error!("设置容器失败：{}", e);
+                    log::error!("设置容器失败：{} - {}", container.display_name, e);
                     errors.push(format!("{}：{}", container.display_name, e));
                 } else {
                     success_count += 1;

@@ -9,13 +9,11 @@ enum ToastType { success, error, warning, info }
 
 // Toast 队列项
 class _ToastQueueItem {
-  final BuildContext context;
   final String message;
   final ToastType type;
   final Duration duration;
 
   _ToastQueueItem({
-    required this.context,
     required this.message,
     required this.type,
     required this.duration,
@@ -26,6 +24,9 @@ class _ToastQueueItem {
 // 用于在应用中显示简洁的提示消息
 // 支持队列机制：多个 Toast 按顺序显示，后一个等前一个显示完
 class ModernToast {
+  // 全局导航键，用于获取稳定的 Overlay context
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
   // Toast 队列
   static final Queue<_ToastQueueItem> _queue = Queue<_ToastQueueItem>();
 
@@ -34,20 +35,19 @@ class ModernToast {
 
   // 显示 Toast 提示
   //
-  // [context] - BuildContext
+  // [context] - BuildContext（可选，用于向后兼容，实际使用 navigatorKey）
   // [message] - 提示消息
   // [type] - Toast 类型，默认为 info
   // [duration] - 显示时长，默认 3 秒
   static void show(
-    BuildContext context,
+    BuildContext? context,
     String message, {
     ToastType type = ToastType.info,
     Duration duration = const Duration(seconds: 3),
   }) {
-    // 添加到队列
+    // 添加到队列（不再保存 context）
     _queue.add(
       _ToastQueueItem(
-        context: context,
         message: message,
         type: type,
         duration: duration,
@@ -72,7 +72,6 @@ class ModernToast {
 
     // 显示当前 Toast
     await _showSingle(
-      item.context,
       item.message,
       type: item.type,
       duration: item.duration,
@@ -84,13 +83,27 @@ class ModernToast {
 
   // 显示单个 Toast（内部方法）
   static Future<void> _showSingle(
-    BuildContext context,
     String message, {
     required ToastType type,
     required Duration duration,
   }) async {
+    // 从 GlobalKey 的 NavigatorState 获取 overlay
+    final navigatorState = navigatorKey.currentState;
+    
+    // 检查 navigator 是否可用
+    if (navigatorState == null) {
+      debugPrint('[ModernToast] Navigator 不可用，跳过显示');
+      return;
+    }
+
+    // 直接从 navigator 获取 overlay
+    final overlay = navigatorState.overlay;
+    if (overlay == null) {
+      debugPrint('[ModernToast] Overlay 不可用');
+      return;
+    }
+
     final completer = Completer<void>();
-    final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
@@ -112,22 +125,22 @@ class ModernToast {
   }
 
   // 显示成功提示
-  static void success(BuildContext context, String message) {
+  static void success(BuildContext? context, String message) {
     show(context, message, type: ToastType.success);
   }
 
   // 显示错误提示
-  static void error(BuildContext context, String message) {
+  static void error(BuildContext? context, String message) {
     show(context, message, type: ToastType.error);
   }
 
   // 显示警告提示
-  static void warning(BuildContext context, String message) {
+  static void warning(BuildContext? context, String message) {
     show(context, message, type: ToastType.warning);
   }
 
   // 显示信息提示
-  static void info(BuildContext context, String message) {
+  static void info(BuildContext? context, String message) {
     show(context, message, type: ToastType.info);
   }
 }
