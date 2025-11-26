@@ -5,15 +5,18 @@ import 'package:stelliberty/clash/data/subscription_model.dart';
 import 'package:stelliberty/clash/providers/subscription_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/widgets/modern_toast.dart';
+import 'package:stelliberty/ui/common/modern_popup_menu.dart';
 
 // 订阅卡片组件
-//
-// 显示订阅的详细信息，包括：
+// 显示订阅的详细信息：
 // - 订阅名称和图标
-// - 订阅 URL
-// - 状态标签（自动更新、更新间隔、上次更新时间、更新中状态）
-// - 流量统计信息
-// - 操作菜单（更新、编辑、复制链接、删除）
+// - 订阅 URL（单行省略）
+// - 状态标签（自动更新、更新间隔、距下次更新时间）
+// - 流量统计信息（进度条 + 数值）
+// - 操作菜单（使用 ModernPopupMenu）
+// 性能优化：
+// - 使用 Consumer 精确监听更新状态
+// - 缓存 isDark 和 colorScheme 避免重复调用
 class SubscriptionCard extends StatelessWidget {
   // 订阅数据
   final Subscription subscription;
@@ -245,8 +248,8 @@ class SubscriptionCard extends StatelessWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-        // 更多操作菜单
-        _buildPopupMenu(context),
+        // 更多操作菜单（使用自定义弹出菜单）
+        _buildModernPopupMenu(context),
       ],
     );
   }
@@ -312,97 +315,55 @@ class SubscriptionCard extends StatelessWidget {
     );
   }
 
-  // 构建弹出菜单
-  Widget _buildPopupMenu(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      onSelected: (value) {
-        switch (value) {
-          case 'edit':
-            onEdit?.call();
-            break;
-          case 'editFile':
-            onEditFile?.call();
-            break;
-          case 'copy':
-            _copyUrl(context);
-            break;
-          case 'override':
-            onManageOverride?.call();
-            break;
-          case 'provider':
-            onViewProvider?.call();
-            break;
-          case 'delete':
-            onDelete?.call();
-            break;
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              const Icon(Icons.edit, size: 20),
-              const SizedBox(width: 12),
-              Text(context.translate.subscription.menu.configEdit),
-            ],
-          ),
+  // 构建现代化弹出菜单
+  // 使用 ModernPopupMenu 替代标准 PopupMenuButton，
+  // 提供 Windows 11 风格的交互体验
+  Widget _buildModernPopupMenu(BuildContext context) {
+    return ModernPopupBox(
+      targetBuilder: (open) => IconButton(
+        icon: const Icon(Icons.more_vert),
+        onPressed: () => open(),
+        style: IconButton.styleFrom(
+          padding: const EdgeInsets.all(8),
+          minimumSize: const Size(32, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        PopupMenuItem(
-          value: 'editFile',
-          child: Row(
-            children: [
-              const Icon(Icons.code, size: 20),
-              const SizedBox(width: 12),
-              Text(context.translate.subscription.menu.fileEdit),
-            ],
+      ),
+      popup: ModernPopupMenu(
+        items: [
+          PopupMenuItemData(
+            icon: Icons.edit,
+            label: context.translate.subscription.menu.configEdit,
+            onPressed: onEdit,
           ),
-        ),
-        PopupMenuItem(
-          value: 'override',
-          child: Row(
-            children: [
-              const Icon(Icons.rule, size: 20),
-              const SizedBox(width: 12),
-              Text(context.translate.subscription.menu.overrideManage),
-            ],
+          PopupMenuItemData(
+            icon: Icons.code,
+            label: context.translate.subscription.menu.fileEdit,
+            onPressed: onEditFile,
           ),
-        ),
-        PopupMenuItem(
-          value: 'provider',
-          child: Row(
-            children: [
-              const Icon(Icons.extension, size: 20),
-              const SizedBox(width: 12),
-              Text(context.translate.subscription.menu.providerView),
-            ],
+          PopupMenuItemData(
+            icon: Icons.rule,
+            label: context.translate.subscription.menu.overrideManage,
+            onPressed: onManageOverride,
           ),
-        ),
-        PopupMenuItem(
-          value: 'copy',
-          child: Row(
-            children: [
-              const Icon(Icons.copy, size: 20),
-              const SizedBox(width: 12),
-              Text(context.translate.subscription.menu.copyLink),
-            ],
+          PopupMenuItemData(
+            icon: Icons.extension,
+            label: context.translate.subscription.menu.providerView,
+            onPressed: onViewProvider,
           ),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete, size: 20, color: Colors.red),
-              const SizedBox(width: 12),
-              Text(
-                context.translate.subscription.menu.delete,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ],
+          PopupMenuItemData(
+            icon: Icons.copy,
+            label: context.translate.subscription.menu.copyLink,
+            onPressed: () => _copyUrl(context),
           ),
-        ),
-      ],
+          PopupMenuItemData(
+            icon: Icons.delete,
+            label: context.translate.subscription.menu.delete,
+            onPressed: onDelete,
+            danger: true,
+          ),
+        ],
+      ),
     );
   }
 

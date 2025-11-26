@@ -11,7 +11,7 @@ import 'package:stelliberty/i18n/i18n.dart';
 
 // 订阅导入方式枚举
 enum SubscriptionImportMethod {
-  // 链接导入
+  // 链接导入（远程订阅）
   link,
 
   // 本地文件导入
@@ -19,6 +19,14 @@ enum SubscriptionImportMethod {
 }
 
 // 订阅对话框组件 - 毛玻璃风格
+// 支持两种模式：
+// 1. 添加模式：可选择链接导入或本地文件导入
+// 2. 编辑模式：修改现有订阅配置
+// 关键特性：
+// - 毛玻璃背景（BackdropFilter + 16 sigma）
+// - 动态高度 URL 输入框（minLines: 1, maxLines: null）
+// - 拖拽导入本地文件
+// - 表单验证（URL 格式、域名、协议）
 class SubscriptionDialog extends StatefulWidget {
   final String title;
   final String? initialName;
@@ -422,6 +430,11 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
     );
   }
 
+  // 构建输入框
+  // 关键参数：
+  // - minLines/maxLines: 控制多行输入
+  //   - 单行：maxLines = 1
+  //   - 动态高度：minLines = 1, maxLines = null（自动扩展）
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

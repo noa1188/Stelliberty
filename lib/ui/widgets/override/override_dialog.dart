@@ -22,6 +22,14 @@ enum OverrideAddMethod {
 }
 
 // 覆写对话框组件 - 毛玻璃风格
+// 支持三种添加方式：
+// 1. 远程下载：通过 URL 获取配置
+// 2. 新建文件：创建空白配置
+// 3. 导入文件：选择本地文件
+// 关键特性：
+// - 动态高度 URL 输入框（避免右侧空白）
+// - 支持 YAML 和 JavaScript 两种格式
+// - 代理模式选择（仅远程下载）
 class OverrideDialog extends StatefulWidget {
   final OverrideConfig? editingOverride;
   final Future<bool> Function(OverrideConfig)? onConfirm;
@@ -357,6 +365,9 @@ class _OverrideDialogState extends State<OverrideDialog>
     );
   }
 
+  // 构建输入框（动态高度支持）
+  // minLines: 1, maxLines: null 实现自动扩展，
+  // 避免 URL 过长时右侧空白过大
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

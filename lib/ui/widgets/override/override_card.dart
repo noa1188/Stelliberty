@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:stelliberty/clash/data/override_model.dart';
 import 'package:stelliberty/i18n/i18n.dart';
+import 'package:stelliberty/ui/common/modern_popup_menu.dart';
 
 // 覆写卡片组件
+// 显示覆写配置的信息：
+// - 类型图标（远程/本地）
+// - 配置名称
+// - 格式标签（YAML/JS）
+// - 独立更新按钮（仅远程）
+// - 操作菜单（编辑配置、编辑文件、删除）
+// 支持拖拽排序：
+// - isDragging: 正在被拖拽
+// - isDragTarget: 拖拽目标位置
 class OverrideCard extends StatelessWidget {
   final OverrideConfig config;
   final bool isUpdating;
@@ -183,56 +193,36 @@ class OverrideCard extends StatelessWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'edit_config':
-                      onEditConfig?.call();
-                      break;
-                    case 'edit_file':
-                      onEditFile?.call();
-                      break;
-                    case 'delete':
-                      onDelete?.call();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit_config',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings, size: 18),
-                        const SizedBox(width: 8),
-                        Text(context.translate.kOverride.editConfig),
-                      ],
-                    ),
+              ModernPopupBox(
+                targetBuilder: (open) => IconButton(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onPressed: () => open(),
+                  style: IconButton.styleFrom(
+                    padding: const EdgeInsets.all(8),
+                    minimumSize: const Size(32, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  PopupMenuItem(
-                    value: 'edit_file',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit, size: 18),
-                        const SizedBox(width: 8),
-                        Text(context.translate.kOverride.editFile),
-                      ],
+                ),
+                popup: ModernPopupMenu(
+                  items: [
+                    PopupMenuItemData(
+                      icon: Icons.settings,
+                      label: context.translate.kOverride.editConfig,
+                      onPressed: onEditConfig,
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete, size: 18, color: Colors.red),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.translate.kOverride.deleteItem,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ],
+                    PopupMenuItemData(
+                      icon: Icons.edit,
+                      label: context.translate.kOverride.editFile,
+                      onPressed: onEditFile,
                     ),
-                  ),
-                ],
+                    PopupMenuItemData(
+                      icon: Icons.delete,
+                      label: context.translate.kOverride.deleteItem,
+                      onPressed: onDelete,
+                      danger: true,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
