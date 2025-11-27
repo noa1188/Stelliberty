@@ -204,32 +204,34 @@ dart run scripts/prebuild.dart --android
 Use the build script to compile and package:
 
 ```bash
-# Build Release version for current platform
+# Build Release version for current platform (default: ZIP only)
 dart run scripts/build.dart
 
-# Build Debug version
-dart run scripts/build.dart --debug
+# Build with Debug version too
+dart run scripts/build.dart --with-debug
 
-# Build both Release and Debug
-dart run scripts/build.dart --all
+# Build with installer package (Windows: ZIP + EXE)
+dart run scripts/build.dart --with-installer
+
+# Build installer only (Windows: EXE only)
+dart run scripts/build.dart --installer-only
+
+# Full build (Release + Debug, ZIP + EXE)
+dart run scripts/build.dart --with-debug --with-installer
 
 # Clean build
 dart run scripts/build.dart --clean
-
-# Build Windows installer (requires Inno Setup) + ZIP
-dart run scripts/build.dart --all-installers
 ```
 
 **Build script parameters:**
 
 | Parameter | Description |
 |-----------|-------------|
-| `--debug` | Build Debug version only |
-| `--all` | Build both Release and Debug |
+| `--with-debug` | Build both Release and Debug versions |
+| `--with-installer` | Generate ZIP + platform installer (Windows: ZIP + EXE) |
+| `--installer-only` | Generate platform installer only (Windows: EXE only) |
 | `--clean` | Run `flutter clean` before building |
-| `--all-installers` | Generate all installer formats (Windows: EXE installer + ZIP) |
 | `--android` | Build Android APK (not supported yet) |
-| `--appbundle` | Build Android AAB (not supported yet) |
 
 **Output location:**
 
@@ -246,7 +248,7 @@ Built packages will be in `build/packages/`
 
 ⚠️ **Unsupported Parameters**:
 
-- `--android` and `--appbundle`: Android platform is not adapted yet
+- `--android`: Android platform is not adapted yet
 
 ### Manual Development Workflow
 

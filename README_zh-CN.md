@@ -204,32 +204,34 @@ dart run scripts/prebuild.dart --android
 使用构建脚本编译和打包：
 
 ```bash
-# 为当前平台构建 Release 版本
+# 构建 Release 版本（默认：仅 ZIP）
 dart run scripts/build.dart
 
-# 构建 Debug 版本
-dart run scripts/build.dart --debug
+# 同时构建 Debug 版本
+dart run scripts/build.dart --with-debug
 
-# 同时构建 Release 和 Debug
-dart run scripts/build.dart --all
+# 同时生成安装包（Windows：ZIP + EXE）
+dart run scripts/build.dart --with-installer
+
+# 仅生成安装包（Windows：仅 EXE）
+dart run scripts/build.dart --installer-only
+
+# 完整构建（Release + Debug，ZIP + EXE）
+dart run scripts/build.dart --with-debug --with-installer
 
 # 干净构建
 dart run scripts/build.dart --clean
-
-# 构建 Windows 安装程序（需要 Inno Setup）+ ZIP 压缩包
-dart run scripts/build.dart --all-installers
 ```
 
 **构建脚本参数：**
 
 | 参数 | 说明 |
 |------|------|
-| `--debug` | 仅构建 Debug 版本 |
-| `--all` | 同时构建 Release 和 Debug |
+| `--with-debug` | 同时构建 Release 和 Debug 版本 |
+| `--with-installer` | 生成 ZIP + 平台安装包（Windows：ZIP + EXE） |
+| `--installer-only` | 仅生成平台安装包（Windows：仅 EXE） |
 | `--clean` | 构建前运行 `flutter clean` |
-| `--all-installers` | 生成所有安装包格式（Windows：EXE 安装程序 + ZIP 压缩包） |
 | `--android` | 构建 Android APK（暂不支持） |
-| `--appbundle` | 构建 Android AAB（暂不支持） |
 
 **输出位置：**
 
@@ -246,7 +248,7 @@ dart run scripts/build.dart --all-installers
 
 ⚠️ **不可用的参数**：
 
-- `--android` 和 `--appbundle`：Android 平台尚未适配
+- `--android`：Android 平台尚未适配
 
 ### 手动开发流程
 

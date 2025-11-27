@@ -134,15 +134,6 @@ String getBuildOutputDir(String projectRoot, String platform, bool isRelease) {
       );
     case 'apk':
       return p.join(projectRoot, 'build', 'app', 'outputs', 'flutter-apk');
-    case 'appbundle':
-      return p.join(
-        projectRoot,
-        'build',
-        'app',
-        'outputs',
-        'bundle',
-        isRelease ? 'release' : 'debug',
-      );
     default:
       throw Exception('不支持的平台: $platform');
   }
@@ -185,7 +176,6 @@ Future<void> runFlutterBuild({
   required String projectRoot,
   required String platform,
   required bool isRelease,
-  bool isAppBundle = false,
 }) async {
   final flutterCmd = await resolveFlutterCmd();
   final mode = isRelease ? 'release' : 'debug';
@@ -193,10 +183,8 @@ Future<void> runFlutterBuild({
   final buildTypeLabel = isRelease ? 'Release' : 'Debug';
   log('▶️  正在构建 $platform $buildTypeLabel 版本...');
 
-  // Android 构建命令
-  final buildCommand = (platform == 'apk' || platform == 'appbundle')
-      ? ['build', isAppBundle ? 'appbundle' : 'apk', '--$mode']
-      : ['build', platform, '--$mode'];
+  // 构建命令
+  final buildCommand = ['build', platform, '--$mode'];
 
   final result = await Process.run(
     flutterCmd,
@@ -852,24 +840,22 @@ Future<void> main(List<String> args) async {
   final startTime = DateTime.now();
 
   final parser = ArgParser()
-    ..addFlag('debug', negatable: false, help: '构建 Debug 版本（默认只构建 Release）')
-    ..addFlag('all', negatable: false, help: '构建所有版本（Release 和 Debug）')
+    ..addFlag(
+      'with-debug',
+      negatable: false,
+      help: '同时构建 Debug 版本（默认只构建 Release）',
+    )
     ..addFlag('clean', negatable: false, help: '执行 flutter clean 进行干净构建')
-    ..addFlag('android', negatable: false, help: '构建 Android APK（可在任何平台运行）')
+    ..addFlag('android', negatable: false, help: '构建 Android APK')
     ..addFlag(
-      'appbundle',
+      'with-installer',
       negatable: false,
-      help: '构建 Android App Bundle（AAB 格式，用于 Google Play）',
+      help: '同时生成 ZIP 便携版和平台特定安装包（Windows: ZIP + EXE）',
     )
     ..addFlag(
-      'installer',
+      'installer-only',
       negatable: false,
-      help: '只生成平台特定的安装包（Windows: EXE, macOS: DMG, Linux: DEB/AppImage）',
-    )
-    ..addFlag(
-      'all-installers',
-      negatable: false,
-      help: '生成所有安装包格式（Windows 下同时生成 EXE 安装程序和 ZIP 压缩包）',
+      help: '只生成平台特定安装包，不含 ZIP（Windows: 仅 EXE）',
     )
     ..addFlag('help', abbr: 'h', negatable: false, help: '显示帮助信息');
 
@@ -887,22 +873,24 @@ Future<void> main(List<String> args) async {
     log('\n用法: dart run scripts/build.dart [选项]\n');
     log('选项:');
     log(parser.usage);
-    log('\n支持平台: Windows, macOS, Linux, Android (APK/AAB)');
+    log('\n支持平台: Windows, macOS, Linux, Android (APK)');
     log('\n示例:');
     log(
-      '  dart run scripts/build.dart                       # 打包当前桌面平台 Release',
+      '  dart run scripts/build.dart                            # 默认：Release ZIP',
     );
-    log('  dart run scripts/build.dart --debug               # 打包当前桌面平台 Debug');
-    log('  dart run scripts/build.dart --android             # 打包 Android APK');
-    log('  dart run scripts/build.dart --appbundle           # 打包 Android AAB');
-    log('  dart run scripts/build.dart --clean               # 干净构建');
-    log('  dart run scripts/build.dart --installer           # 只生成平台特定安装包');
     log(
-      '  dart run scripts/build.dart --all-installers      # 生成所有安装包格式（ZIP + EXE，仅 Windows）',
+      '  dart run scripts/build.dart --with-debug               # Release + Debug ZIP',
     );
-    log('  dart run scripts/build.dart --all --clean         # 干净构建所有版本');
     log(
-      '  dart run scripts/build.dart --android --all       # 构建 Android Release 和 Debug',
+      '  dart run scripts/build.dart --with-installer           # Release ZIP + EXE',
+    );
+    log(
+      '  dart run scripts/build.dart --installer-only           # Release EXE only',
+    );
+    log('  dart run scripts/build.dart --with-debug --with-installer  # 完整打包');
+    log('  dart run scripts/build.dart --clean                    # 干净构建');
+    log(
+      '  dart run scripts/build.dart --android                  # Android APK',
     );
     exit(0); // 显式退出
   }
@@ -911,50 +899,52 @@ Future<void> main(List<String> args) async {
 
   // 获取参数
   final shouldClean = argResults['clean'] as bool;
-  final buildDebug = argResults['debug'] as bool;
-  final buildAll = argResults['all'] as bool;
+  final withDebug = argResults['with-debug'] as bool;
   final isAndroid = argResults['android'] as bool;
-  final isAppBundle = argResults['appbundle'] as bool;
-  final installerOnly = argResults['installer'] as bool;
-  final allInstallers = argResults['all-installers'] as bool;
+  final withInstaller = argResults['with-installer'] as bool;
+  final installerOnly = argResults['installer-only'] as bool;
 
   // 参数冲突检查
-  if (installerOnly && allInstallers) {
-    log('❌ 错误: --installer 和 --all-installers 不能同时使用');
+  if (withInstaller && installerOnly) {
+    log('❌ 错误: --with-installer 和 --installer-only 不能同时使用');
+    log('   提示：');
+    log('   • 默认：Release ZIP');
+    log('   • --with-installer：Release ZIP + 平台安装包');
+    log('   • --installer-only：Release 平台安装包');
+    log('   • --with-debug：同时构建 Debug 版本');
     exit(1);
   }
 
-  // 打包格式逻辑：
-  // 默认（无参数）：只生成 ZIP
-  // --installer：只生成 EXE（仅 Windows）
-  // --all-installers：生成 ZIP + EXE（仅 Windows）
-  final shouldPackZip = !installerOnly && !allInstallers;
+  // 打包格式逻辑（简化版）：
+  // 默认：只生成 ZIP
+  // --with-installer：生成 ZIP + 平台安装包
+  // --installer-only：只生成平台安装包
+  final shouldPackZip = !installerOnly;
   final shouldPackInstaller =
-      (installerOnly || allInstallers) && Platform.isWindows;
+      (withInstaller || installerOnly) && Platform.isWindows;
 
   if (installerOnly && !Platform.isWindows) {
-    log('❌ 错误: --installer 仅支持 Windows 平台');
+    log('❌ 错误: --installer-only 仅支持 Windows 平台');
     exit(1);
   }
 
-  if (allInstallers && !Platform.isWindows) {
-    log('⚠️  警告: --all-installers 仅在 Windows 平台生成 EXE 安装包');
-    log('    其他平台将只生成 ZIP 包');
+  if (withInstaller && !Platform.isWindows) {
+    log('⚠️  警告: --with-installer 在非 Windows 平台只生成 ZIP');
+    log('    （平台特定安装包仅 Windows 支持）');
   }
 
-  // 确定要构建的版本
+  // 版本构建逻辑（简化版）：
   // 默认：只构建 Release
-  // --debug：只构建 Debug
-  // --all：构建 Release 和 Debug
-  final shouldBuildRelease = !buildDebug || buildAll;
-  final shouldBuildDebug = buildDebug || buildAll;
+  // --with-debug：同时构建 Release + Debug
+  final shouldBuildRelease = true; // 始终构建 Release
+  final shouldBuildDebug = withDebug;
 
   try {
     // 步骤 1: 识别平台
     String platform;
     bool needZipPack = true;
 
-    if (isAndroid || isAppBundle) {
+    if (isAndroid) {
       // 检查 Android 支持
       final androidDir = Directory(p.join(projectRoot, 'android'));
       if (!await androidDir.exists()) {
@@ -962,9 +952,9 @@ Future<void> main(List<String> args) async {
         exit(1);
       }
 
-      platform = isAppBundle ? 'appbundle' : 'apk';
+      platform = 'apk';
       needZipPack = false; // Android 不需要打包成 ZIP
-      log('📱 构建 Android ${isAppBundle ? 'App Bundle (AAB)' : 'APK'}');
+      log('📱 构建 Android APK');
     } else {
       platform = getCurrentPlatform();
       log('🖥️  检测到桌面平台: $platform');
@@ -989,22 +979,19 @@ Future<void> main(List<String> args) async {
         projectRoot: projectRoot,
         platform: platform,
         isRelease: true,
-        isAppBundle: isAppBundle,
       );
 
       if (needZipPack) {
         // 桌面平台：打包成 ZIP 或/和 EXE
         final sourceDir = getBuildOutputDir(projectRoot, platform, true);
-        final platformSuffix = platform == 'windows'
-            ? 'win'
-            : (platform == 'macos' ? 'mac' : 'linux');
+        final platformSuffix = platform; // 使用完整平台名：windows, macos, linux
         final arch = getCurrentArchitecture();
 
         // 打包为 ZIP
         if (shouldPackZip) {
           final outputPath = p.join(
             outputDir,
-            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-${platformSuffix}_$arch.zip',
+            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-$platformSuffix-$arch.zip',
           );
 
           await packZip(sourceDir: sourceDir, outputPath: outputPath);
@@ -1014,7 +1001,7 @@ Future<void> main(List<String> args) async {
         if (shouldPackInstaller) {
           final outputPath = p.join(
             outputDir,
-            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-${platformSuffix}_$arch-setup.exe',
+            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-$platformSuffix-$arch-setup.exe',
           );
 
           await packInnoSetup(
@@ -1027,14 +1014,13 @@ Future<void> main(List<String> args) async {
           );
         }
       } else {
-        // Android：直接复制 APK/AAB 文件
+        // Android：直接复制 APK 文件
         final sourceDir = getBuildOutputDir(projectRoot, platform, true);
-        final sourceFile = getAndroidOutputFile(sourceDir, true, isAppBundle);
-        final extension = isAppBundle ? 'aab' : 'apk';
+        final sourceFile = getAndroidOutputFile(sourceDir, true, false);
 
         final outputPath = p.join(
           outputDir,
-          '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-android.$extension',
+          '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-android.apk',
         );
 
         await Directory(outputDir).create(recursive: true);
@@ -1052,22 +1038,19 @@ Future<void> main(List<String> args) async {
         projectRoot: projectRoot,
         platform: platform,
         isRelease: false,
-        isAppBundle: isAppBundle,
       );
 
       if (needZipPack) {
         // 桌面平台：打包成 ZIP 或/和 EXE
         final sourceDir = getBuildOutputDir(projectRoot, platform, false);
-        final platformSuffix = platform == 'windows'
-            ? 'win'
-            : (platform == 'macos' ? 'mac' : 'linux');
+        final platformSuffix = platform; // 使用完整平台名：windows, macos, linux
         final arch = getCurrentArchitecture();
 
         // 打包为 ZIP
         if (shouldPackZip) {
           final outputPath = p.join(
             outputDir,
-            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-${platformSuffix}_$arch-Debug.zip',
+            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-$platformSuffix-$arch-debug.zip',
           );
 
           await packZip(sourceDir: sourceDir, outputPath: outputPath);
@@ -1077,7 +1060,7 @@ Future<void> main(List<String> args) async {
         if (shouldPackInstaller) {
           final outputPath = p.join(
             outputDir,
-            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-${platformSuffix}_$arch-Debug-setup.exe',
+            '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-$platformSuffix-$arch-debug-setup.exe',
           );
 
           await packInnoSetup(
@@ -1090,14 +1073,13 @@ Future<void> main(List<String> args) async {
           );
         }
       } else {
-        // Android：直接复制 APK/AAB 文件
+        // Android：直接复制 APK 文件
         final sourceDir = getBuildOutputDir(projectRoot, platform, false);
-        final sourceFile = getAndroidOutputFile(sourceDir, false, isAppBundle);
-        final extension = isAppBundle ? 'aab' : 'apk';
+        final sourceFile = getAndroidOutputFile(sourceDir, false, false);
 
         final outputPath = p.join(
           outputDir,
-          '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-android-debug.$extension',
+          '${appName.substring(0, 1).toUpperCase()}${appName.substring(1)}-v$version-android-debug.apk',
         );
 
         await Directory(outputDir).create(recursive: true);
