@@ -1,5 +1,6 @@
 // 应用更新服务：GitHub Release 检查
 
+use once_cell::sync::Lazy;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -32,6 +33,20 @@ struct PlatformMatchRules {
     required_keywords: &'static [&'static str],
 }
 
+// HTTP 客户端单例 - 避免重复创建连接导致的内存泄漏
+static HTTP_CLIENT: Lazy<Result<reqwest::Client, String>> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .user_agent("Stelliberty-App")
+        .build()
+        .map_err(|e| format!("HTTP 客户端初始化失败: {}", e))
+});
+
+// 获取 HTTP 客户端引用
+fn get_http_client() -> Result<&'static reqwest::Client, String> {
+    HTTP_CLIENT.as_ref().map_err(|e| e.clone())
+}
+
 // ============================================================================
 // 核心功能
 // ============================================================================
@@ -50,12 +65,8 @@ pub async fn check_github_update(
         github_repo
     );
 
-    // 发送 HTTP 请求
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| format!("创建 HTTP 客户端失败: {}", e))?;
-
+    // 发送 HTTP 请求 - 使用单例客户端避免连接泄漏
+    let client = get_http_client()?;
     let response = client
         .get(&api_url)
         .header("Accept", "application/vnd.github.v3+json")
@@ -81,18 +92,15 @@ pub async fn check_github_update(
     // 比较版本
     let has_update = compare_versions(current_version, latest_version) == Ordering::Less;
 
-    // 检测当前平台和架构
+    // 检测当前平台和架构并查找匹配的安装包
     let platform = get_platform_name();
     let arch = get_architecture();
     log::info!("当前平台: {}, 架构: {}", platform, arch);
 
-    // 查找匹配的安装包
     let download_url = find_matching_asset(&release.assets, &platform, &arch);
-
-    if download_url.is_some() {
-        log::info!("找到匹配的下载链接");
-    } else {
-        log::warn!("未找到匹配当前平台的安装包");
+    match &download_url {
+        Some(_) => log::info!("找到匹配的下载链接"),
+        None => log::warn!("未找到匹配当前平台的安装包"),
     }
 
     Ok(UpdateCheckResult {
@@ -105,22 +113,18 @@ pub async fn check_github_update(
     })
 }
 
-// 比较版本号
+// 比较版本号（语义化版本）
 fn compare_versions(v1: &str, v2: &str) -> Ordering {
     let parts1: Vec<u32> = v1.split('.').filter_map(|s| s.parse().ok()).collect();
     let parts2: Vec<u32> = v2.split('.').filter_map(|s| s.parse().ok()).collect();
-    let max_len = parts1.len().max(parts2.len());
 
-    for i in 0..max_len {
-        let p1 = parts1.get(i).copied().unwrap_or(0);
-        let p2 = parts2.get(i).copied().unwrap_or(0);
-
-        match p1.cmp(&p2) {
+    // 逐段比较版本号
+    for i in 0..parts1.len().max(parts2.len()) {
+        match parts1.get(i).unwrap_or(&0).cmp(parts2.get(i).unwrap_or(&0)) {
             Ordering::Equal => continue,
             other => return other,
         }
     }
-
     Ordering::Equal
 }
 
@@ -128,45 +132,30 @@ fn compare_versions(v1: &str, v2: &str) -> Ordering {
 fn find_matching_asset(assets: &[GitHubAsset], platform: &str, arch: &str) -> Option<String> {
     let rules = get_platform_match_rules(platform, arch)?;
 
-    for asset in assets {
+    assets.iter().find_map(|asset| {
         let name_lower = asset.name.to_lowercase();
 
-        // 检查文件扩展名
-        if !name_lower.ends_with(rules.file_extension) {
-            continue;
-        }
-
-        // 检查平台关键字
-        if !rules
-            .platform_keywords
-            .iter()
-            .any(|k| name_lower.contains(k))
-        {
-            continue;
-        }
-
-        // 检查架构关键字（如果指定）
-        if !rules.arch_keywords.is_empty()
-            && !rules.arch_keywords.iter().any(|k| name_lower.contains(k))
-        {
-            continue;
-        }
-
-        // 检查必需的关键字
-        if !rules.required_keywords.is_empty()
-            && !rules
-                .required_keywords
+        // 检查所有匹配条件
+        let matches = name_lower.ends_with(rules.file_extension)
+            && rules
+                .platform_keywords
                 .iter()
-                .all(|k| name_lower.contains(k))
-        {
-            continue;
+                .any(|k| name_lower.contains(k))
+            && (rules.arch_keywords.is_empty()
+                || rules.arch_keywords.iter().any(|k| name_lower.contains(k)))
+            && (rules.required_keywords.is_empty()
+                || rules
+                    .required_keywords
+                    .iter()
+                    .all(|k| name_lower.contains(k)));
+
+        if matches {
+            log::info!("找到匹配的安装包: {}", asset.name);
+            Some(asset.browser_download_url.clone())
+        } else {
+            None
         }
-
-        log::info!("找到匹配的安装包: {}", asset.name);
-        return Some(asset.browser_download_url.clone());
-    }
-
-    None
+    })
 }
 
 // 获取平台匹配规则
@@ -221,13 +210,14 @@ fn get_platform_name() -> String {
     std::env::consts::OS.to_string()
 }
 
-// 获取系统架构
+// 获取系统架构（标准化为常用命名）
 fn get_architecture() -> String {
     match std::env::consts::ARCH {
-        "aarch64" => "arm64".to_string(),
-        "x86_64" => "x64".to_string(),
-        arch => arch.to_string(),
+        "aarch64" => "arm64",
+        "x86_64" => "x64",
+        arch => arch,
     }
+    .to_string()
 }
 
 // ============================================================================

@@ -394,22 +394,26 @@ impl CheckAppUpdateRequest {
         let current_version = self.current_version.clone();
         let github_repo = self.github_repo.clone();
 
+        // 使用 tokio::spawn 异步处理更新检查
+        // 任务会独立运行，完成后自动清理
         tokio::spawn(async move {
             log::info!("检查更新: {} (当前版本: {})", github_repo, current_version);
 
-            match crate::system::app_update::check_github_update(&current_version, &github_repo)
-                .await
-            {
-                Ok(result) => {
-                    log::info!("更新检查成功: 最新版本 {}", result.latest_version);
+            let result =
+                crate::system::app_update::check_github_update(&current_version, &github_repo)
+                    .await;
+
+            match result {
+                Ok(update_result) => {
+                    log::info!("更新检查成功: 最新版本 {}", update_result.latest_version);
 
                     AppUpdateResult {
-                        current_version: result.current_version,
-                        latest_version: result.latest_version,
-                        has_update: result.has_update,
-                        download_url: result.download_url.unwrap_or_default(),
-                        release_notes: result.release_notes.unwrap_or_default(),
-                        html_url: result.html_url.unwrap_or_default(),
+                        current_version: update_result.current_version,
+                        latest_version: update_result.latest_version,
+                        has_update: update_result.has_update,
+                        download_url: update_result.download_url.unwrap_or_default(),
+                        release_notes: update_result.release_notes.unwrap_or_default(),
+                        html_url: update_result.html_url.unwrap_or_default(),
                         error: String::new(),
                     }
                     .send_signal_to_dart();

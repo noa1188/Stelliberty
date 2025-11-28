@@ -406,33 +406,25 @@ pub fn set_loopback_exemption(package_family_name: &str, enabled: bool) -> Resul
 pub fn init() {
     use crate::system::messages::{GetAppContainers, SaveLoopbackConfiguration, SetLoopback};
 
+    // 修复：避免嵌套 spawn，直接在监听循环中处理消息
     spawn(async {
         let receiver = GetAppContainers::get_dart_signal_receiver();
         while let Some(dart_signal) = receiver.recv().await {
-            let message = dart_signal.message;
-            spawn(async move {
-                message.handle();
-            });
+            dart_signal.message.handle();
         }
     });
 
     spawn(async {
         let receiver = SetLoopback::get_dart_signal_receiver();
         while let Some(dart_signal) = receiver.recv().await {
-            let message = dart_signal.message;
-            spawn(async move {
-                message.handle();
-            });
+            dart_signal.message.handle();
         }
     });
 
     spawn(async {
         let receiver = SaveLoopbackConfiguration::get_dart_signal_receiver();
         while let Some(dart_signal) = receiver.recv().await {
-            let message = dart_signal.message;
-            spawn(async move {
-                message.handle();
-            });
+            dart_signal.message.handle();
         }
     });
 }
