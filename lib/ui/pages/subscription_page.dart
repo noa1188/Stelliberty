@@ -53,7 +53,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         // 主内容区域 - 使用 Selector 监听列表变化
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0),
             child: Selector<SubscriptionProvider, _SubscriptionListState>(
               selector: (_, provider) => _SubscriptionListState(
                 isLoading: provider.isLoading,
@@ -241,7 +241,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     // 显示订阅列表（支持拖动排序）
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
       itemCount: data.subscriptions.length,
       buildDefaultDragHandles: false,
       // 优化：添加缓存范围，预渲染可见区域外的项
