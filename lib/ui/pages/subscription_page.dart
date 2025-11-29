@@ -14,6 +14,7 @@ import 'package:stelliberty/providers/content_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
+import 'package:stelliberty/ui/constants/spacing.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -52,20 +53,20 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
         // 主内容区域 - 使用 Selector 监听列表变化
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0),
-            child: Selector<SubscriptionProvider, _SubscriptionListState>(
-              selector: (_, provider) => _SubscriptionListState(
-                isLoading: provider.isLoading,
-                errorMessage: provider.errorMessage,
-                subscriptions: provider.subscriptions,
-                currentSubscriptionId: provider.currentSubscriptionId,
-              ),
-              builder: (context, data, child) {
-                final provider = context.read<SubscriptionProvider>();
-                return _buildMainContent(context, provider, data);
-              },
+          child: Selector<SubscriptionProvider, _SubscriptionListState>(
+            selector: (_, provider) => _SubscriptionListState(
+              isLoading: provider.isLoading,
+              errorMessage: provider.errorMessage,
+              subscriptions: provider.subscriptions,
+              currentSubscriptionId: provider.currentSubscriptionId,
             ),
+            builder: (context, data, child) {
+              final provider = context.read<SubscriptionProvider>();
+              return Padding(
+                padding: SpacingConstants.scrollbarPadding,
+                child: _buildMainContent(context, provider, data),
+              );
+            },
           ),
         ),
       ],

@@ -7,6 +7,7 @@ import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/widgets/core_log/core_log_card.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/ui/common/modern_tooltip.dart';
+import 'package:stelliberty/ui/constants/spacing.dart';
 
 // 日志页面 - 显示 Clash 核心的实时日志
 // 使用 Material Design 3 风格，与连接页面保持一致
@@ -73,29 +74,29 @@ class _LogPageState extends State<LogPage> {
   Widget build(BuildContext context) {
     final isRunning = ClashManager.instance.isRunning;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 过滤器和控制栏（立即显示，不依赖 Provider 数据）
-          _isFirstLoad
-              ? _buildFilterBarSkeleton(context)
-              : _buildFilterBar(context),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 过滤器和控制栏（立即显示，不依赖 Provider 数据）
+        _isFirstLoad
+            ? _buildFilterBarSkeleton(context)
+            : _buildFilterBar(context),
 
-          // 统一的分隔线
-          const Divider(height: 1, thickness: 1),
+        // 统一的分隔线
+        const Divider(height: 1, thickness: 1),
 
-          // 日志列表（延迟渲染）
-          Expanded(
+        // 日志列表（延迟渲染）
+        Expanded(
+          child: Padding(
+            padding: SpacingConstants.scrollbarPadding,
             child: _isFirstLoad
                 ? _buildLoadingState(context)
                 : (isRunning
                       ? _buildLogList(context)
                       : _buildEmptyState(context)),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:stelliberty/ui/constants/spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stelliberty/providers/content_provider.dart';
@@ -54,11 +55,11 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
         ),
         // 可滚动内容
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0), // 统一在此处设置边距
-            child: Scrollbar(
-              thumbVisibility: true,
-              controller: _scrollController,
+          child: Scrollbar(
+            thumbVisibility: true,
+            controller: _scrollController,
+            child: Padding(
+              padding: SpacingConstants.scrollbarPadding,
               child: SingleChildScrollView(
                 controller: _scrollController,
                 // 移除内部 padding

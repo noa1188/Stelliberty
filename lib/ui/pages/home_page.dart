@@ -5,6 +5,7 @@ import 'package:stelliberty/ui/widgets/home/proxy_switch_card.dart';
 import 'package:stelliberty/ui/widgets/home/traffic_stats_card.dart';
 import 'package:stelliberty/ui/widgets/home/tun_mode_card.dart';
 import 'package:stelliberty/utils/logger.dart';
+import 'package:stelliberty/ui/constants/spacing.dart';
 
 // 主页 - 代理控制中心
 class HomePageContent extends StatefulWidget {
@@ -23,25 +24,36 @@ class _HomePageContentState extends State<HomePageContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Padding(
+          padding: SpacingConstants.scrollbarPadding,
+          child: SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              constraints: BoxConstraints(
+                minHeight:
+                    constraints.maxHeight -
+                    SpacingConstants.scrollbarPaddingTop -
+                    SpacingConstants.scrollbarPaddingBottom,
+              ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 0, 24.0, 0),
+                padding: EdgeInsets.fromLTRB(
+                  25.0,
+                  24.0,
+                  25.0 - SpacingConstants.scrollbarRightCompensation,
+                  2.0, // 距底2px
+                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24),
                     // 第一行：代理控制卡片 + TUN 模式卡片
                     IntrinsicHeight(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: ProxySwitchCard()),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: 25),
                           Expanded(child: TunModeCard()),
                         ],
                       ),
@@ -56,7 +68,7 @@ class _HomePageContentState extends State<HomePageContent> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: ClashInfoCard()),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: 25),
                           Expanded(child: OutboundModeCard()),
                         ],
                       ),
@@ -65,9 +77,9 @@ class _HomePageContentState extends State<HomePageContent> {
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

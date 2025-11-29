@@ -1,3 +1,4 @@
+import 'package:stelliberty/ui/constants/spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stelliberty/providers/content_provider.dart';
@@ -57,15 +58,15 @@ class _LogsDebugPageState extends State<LogsDebugPage> {
         ),
         // 可滚动内容
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 3.0, 5.0),
-            child: Scrollbar(
-              controller: _scrollController,
+          child: Scrollbar(
+            controller: _scrollController,
+            child: Padding(
+              padding: SpacingConstants.scrollbarPadding,
               child: SingleChildScrollView(
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
+                  horizontal: 32 - SpacingConstants.scrollbarRightCompensation,
                   vertical: 16,
                 ),
                 child: const Column(
