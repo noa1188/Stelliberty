@@ -1,12 +1,11 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:stelliberty/clash/data/connection_model.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/common/empty.dart';
+import 'package:stelliberty/ui/common/modern_dialog.dart';
 
-/// 连接详情对话框
-/// 显示连接的完整信息，包括所有新增的字段
+// 连接详情对话框
+// 显示连接的完整信息，包括所有新增的字段
 class ConnectionDetailDialog extends StatelessWidget {
   final ConnectionInfo connection;
 
@@ -14,82 +13,19 @@ class ConnectionDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 600,
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withAlpha(20)
-                    : Colors.white.withAlpha(178),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withAlpha(isDark ? 26 : 77),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(46),
-                    blurRadius: 40,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(context),
-                  Flexible(child: _buildContent(context)),
-                  _buildActions(context),
-                ],
-              ),
-            ),
-          ),
+    return ModernDialog(
+      title: context.translate.connection.connectionDetails,
+      titleIcon: Icons.info_outline_rounded,
+      maxWidth: 600,
+      maxHeightRatio: 0.8,
+      content: _buildContent(context),
+      actionsRight: [
+        DialogActionButton(
+          label: context.translate.connection.exitButton,
+          isPrimary: false,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withAlpha(15) : Colors.white.withAlpha(77),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withAlpha(isDark ? 26 : 77),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 24,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              context.translate.connection.connectionDetails,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -171,52 +107,6 @@ class ConnectionDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.white.withValues(alpha: 0.3),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-              width: 1,
-            ),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 16,
-                ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-                shadowColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.5),
-              ),
-              child: Text(context.translate.connection.exitButton),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // 构建信息分组
   Widget _buildInfoSection(
     BuildContext context,
@@ -290,28 +180,12 @@ class ConnectionDetailDialog extends StatelessWidget {
     }
   }
 
-  /// 显示连接详情对话框
+  // 显示连接详情对话框
   static void show(BuildContext context, ConnectionInfo connection) {
-    showGeneralDialog(
+    showDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: ConnectionDetailDialog(connection: connection),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: animation.drive(Tween(begin: 0.9, end: 1.0)),
-            child: child,
-          ),
-        );
-      },
+      builder: (context) => ConnectionDetailDialog(connection: connection),
     );
   }
 }

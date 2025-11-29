@@ -7,8 +7,9 @@ import 'package:stelliberty/clash/services/override_service.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/widgets/modern_toast.dart';
+import 'package:stelliberty/ui/common/modern_dialog.dart';
 
-// 规则覆写管理对话框 - 毛玻璃风格
+// 规则覆写管理对话框
 class OverrideManagementDialog extends StatefulWidget {
   final List<OverrideConfig> initialOverrides;
   final Function(List<OverrideConfig>) onSave;
@@ -43,188 +44,36 @@ class OverrideManagementDialog extends StatefulWidget {
       _OverrideManagementDialogState();
 }
 
-class _OverrideManagementDialogState extends State<OverrideManagementDialog>
-    with TickerProviderStateMixin {
+class _OverrideManagementDialogState extends State<OverrideManagementDialog> {
   late List<OverrideConfig> _overrides;
-  late final AnimationController _animationController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
     _overrides = List.from(widget.initialOverrides);
-
-    // 初始化动画
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    // 启动动画
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Container(
-            color: Colors.black.withValues(alpha: 0.2),
-            child: Center(
-              child: Transform.scale(
-                scale: _scaleAnimation.value,
-                child: Opacity(
-                  opacity: _opacityAnimation.value,
-                  child: _buildDialog(),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDialog() {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 700,
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: 0.98),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outline.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 40,
-                  offset: const Offset(0, 15),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                Flexible(child: _buildContent()),
-                _buildActions(),
-              ],
-            ),
-          ),
+    return ModernDialog(
+      title: context.translate.overrideDialog.title,
+      titleIcon: Icons.rule,
+      maxWidth: 700,
+      maxHeightRatio: 0.8,
+      content: _buildContent(),
+      actionsRight: [
+        DialogActionButton(
+          label: context.translate.common.cancel,
+          isPrimary: false,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        DialogActionButton(
+          label: context.translate.common.save,
+          isPrimary: true,
+          onPressed: _handleSave,
         ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.rule,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.translate.overrideDialog.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  context.translate.overrideDialog.subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: IconButton(
-              onPressed: _handleCancel,
-              icon: Icon(
-                Icons.close,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
+      onClose: () => Navigator.of(context).pop(),
     );
   }
 
@@ -478,59 +327,6 @@ class _OverrideManagementDialogState extends State<OverrideManagementDialog>
     );
   }
 
-  Widget _buildActions() {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _handleCancel,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  side: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(context.translate.common.cancel),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _handleSave,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(context.translate.common.save),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showAddOverrideDialog(OverrideType type) async {
     final result = await AddOverrideDialog.show(
       context,
@@ -564,21 +360,9 @@ class _OverrideManagementDialogState extends State<OverrideManagementDialog>
     });
   }
 
-  void _handleCancel() {
-    _animationController.reverse().then((_) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    });
-  }
-
   void _handleSave() {
     widget.onSave(_overrides);
-    _animationController.reverse().then((_) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    });
+    Navigator.of(context).pop();
   }
 }
 
@@ -616,18 +400,13 @@ class AddOverrideDialog extends StatefulWidget {
   State<AddOverrideDialog> createState() => _AddOverrideDialogState();
 }
 
-class _AddOverrideDialogState extends State<AddOverrideDialog>
-    with TickerProviderStateMixin {
+class _AddOverrideDialogState extends State<AddOverrideDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _urlController;
   late OverrideFormat _format;
   File? _selectedFile;
   String? _selectedFileName;
   bool _isDragging = false;
-
-  late final AnimationController _animationController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -646,153 +425,40 @@ class _AddOverrideDialogState extends State<AddOverrideDialog>
     if (widget.editingOverride?.localPath != null) {
       _selectedFileName = widget.editingOverride!.localPath!.split('/').last;
     }
-
-    // 初始化动画
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _animationController.forward();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _urlController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Container(
-            color: Colors.black.withValues(alpha: 0.2),
-            child: Center(
-              child: Transform.scale(
-                scale: _scaleAnimation.value,
-                child: Opacity(
-                  opacity: _opacityAnimation.value,
-                  child: _buildDialog(),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDialog() {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 520),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: 0.98),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outline.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 40,
-                  offset: const Offset(0, 15),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [_buildHeader(), _buildContent(), _buildActions()],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
     final isEditing = widget.editingOverride != null;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return ModernDialog(
+      title: isEditing
+          ? context.translate.overrideDialog.editOverrideTitle
+          : context.translate.overrideDialog.addOverrideTitle,
+      titleIcon: isEditing ? Icons.edit : Icons.add_circle_outline,
+      maxWidth: 520,
+      content: _buildContent(),
+      actionsRight: [
+        DialogActionButton(
+          label: context.translate.common.cancel,
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
         ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+        DialogActionButton(
+          label: isEditing
+              ? context.translate.common.save
+              : context.translate.common.add,
+          isPrimary: true,
+          isLoading: _isLoading,
+          onPressed: _handleConfirm,
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isEditing ? Icons.edit : Icons.add_circle_outline,
-              color: Theme.of(context).colorScheme.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              isEditing
-                  ? context.translate.overrideDialog.editOverrideTitle
-                  : context.translate.overrideDialog.addOverrideTitle,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: IconButton(
-              onPressed: _handleCancel,
-              icon: Icon(
-                Icons.close,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
+      onClose: _isLoading ? null : () => Navigator.of(context).pop(),
     );
   }
 
@@ -1144,66 +810,7 @@ class _AddOverrideDialogState extends State<AddOverrideDialog>
     }
   }
 
-  Widget _buildActions() {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(24),
-            bottomRight: Radius.circular(24),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _handleCancel,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  side: BorderSide(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(context.translate.common.cancel),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _handleConfirm,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: Text(context.translate.subscriptionDialog.confirmButton),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleCancel() {
-    _animationController.reverse().then((_) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    });
-  }
+  bool _isLoading = false;
 
   void _handleConfirm() async {
     if (!_formKey.currentState!.validate()) {
@@ -1213,6 +820,10 @@ class _AddOverrideDialogState extends State<AddOverrideDialog>
     if (widget.type == OverrideType.local && _selectedFile == null) {
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       // 创建覆写配置
@@ -1240,16 +851,6 @@ class _AddOverrideDialogState extends State<AddOverrideDialog>
                 : null,
           );
 
-      // 显示加载提示
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
-        );
-      }
-
       // 下载或复制文件
       String content;
       if (widget.type == OverrideType.remote) {
@@ -1264,21 +865,14 @@ class _AddOverrideDialogState extends State<AddOverrideDialog>
       // 更新覆写配置，添加内容
       final updatedOverride = override.copyWith(content: content);
 
-      // 关闭加载提示
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
       // 关闭对话框并返回结果
-      await _animationController.reverse();
       if (mounted) {
         Navigator.of(context).pop(updatedOverride);
       }
     } catch (e) {
-      // 关闭加载提示
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      setState(() {
+        _isLoading = false;
+      });
 
       // 显示错误提示
       if (mounted) {

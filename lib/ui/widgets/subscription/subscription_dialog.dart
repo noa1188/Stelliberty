@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:desktop_drop/desktop_drop.dart';
@@ -7,6 +6,7 @@ import 'package:stelliberty/clash/data/subscription_model.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/ui/widgets/modern_toast.dart';
 import 'package:stelliberty/ui/common/modern_switch.dart';
+import 'package:stelliberty/ui/common/modern_dialog.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 
 // 订阅导入方式枚举
@@ -99,8 +99,7 @@ class SubscriptionDialog extends StatefulWidget {
   State<SubscriptionDialog> createState() => _SubscriptionDialogState();
 }
 
-class _SubscriptionDialogState extends State<SubscriptionDialog>
-    with TickerProviderStateMixin {
+class _SubscriptionDialogState extends State<SubscriptionDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _urlController;
   late final TextEditingController _intervalController;
@@ -113,10 +112,6 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
   // 选中的文件信息
   File? _selectedFile;
   String? _selectedFileName;
-
-  late final AnimationController _animationController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -134,27 +129,6 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
     );
     _autoUpdate = widget.initialAutoUpdate ?? false;
     _proxyMode = widget.initialProxyMode ?? SubscriptionProxyMode.direct;
-
-    // 初始化动画
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    // 延迟启动动画，确保组件完全渲染后再播放
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _animationController.forward();
-      }
-    });
   }
 
   @override
@@ -162,163 +136,50 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
     _nameController.dispose();
     _urlController.dispose();
     _intervalController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              // 背景遮罩
-              Container(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.3),
+    return ModernDialog(
+      title: widget.title,
+      titleIcon: widget.titleIcon,
+      maxWidth: 720,
+      maxHeightRatio: 0.85,
+      content: _buildContent(),
+      actionsLeft: widget.isAddMode
+          ? Text(
+              context.translate.subscriptionDialog.addModeHint,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
-              // 对话框内容
-              Center(
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Opacity(
-                    opacity: _opacityAnimation.value,
-                    child: _buildDialog(),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 720,
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 40,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(),
-                  Flexible(child: _buildContent()),
-                  _buildActions(),
-                ],
+            )
+          : Text(
+              context.translate.subscriptionDialog.editModeHint,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-          ),
+      actionsRight: [
+        DialogActionButton(
+          label: context.translate.subscriptionDialog.cancelButton,
+          isPrimary: false,
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.white.withValues(alpha: 0.3),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-            width: 1,
-          ),
+        DialogActionButton(
+          label: widget.confirmText,
+          isPrimary: true,
+          isLoading: _isLoading,
+          onPressed: _handleConfirm,
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(widget.titleIcon, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _isLoading ? null : _handleCancel,
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.close,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
+      onClose: _isLoading ? null : () => Navigator.of(context).pop(),
     );
   }
 
@@ -1100,117 +961,6 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
     }
   }
 
-  Widget _buildActions() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.white.withValues(alpha: 0.3),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-              width: 1,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.isAddMode ? '提示：订阅开启后会自动同步节点' : '提示：保存后配置将立即生效',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: _isLoading ? null : _handleCancel,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                side: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.6),
-                ),
-                backgroundColor: isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.white.withValues(alpha: 0.6),
-              ),
-              child: Text(
-                context.translate.subscriptionDialog.cancelButton,
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _handleConfirm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 16,
-                ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-                shadowColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.5),
-              ),
-              child: _isLoading
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(widget.confirmText),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(widget.confirmText),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleCancel() {
-    _animationController.reverse().then((_) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    });
-  }
-
   void _handleConfirm() async {
     // 验证表单
     if (!_formKey.currentState!.validate()) {
@@ -1258,7 +1008,6 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
 
         if (success) {
           // 成功，关闭对话框
-          await _animationController.reverse();
           if (mounted) {
             Navigator.of(context).pop();
           }
@@ -1280,10 +1029,7 @@ class _SubscriptionDialogState extends State<SubscriptionDialog>
         // 没有回调，直接返回结果（编辑模式）
         await Future.delayed(const Duration(milliseconds: 300));
         if (mounted) {
-          await _animationController.reverse();
-          if (mounted) {
-            Navigator.of(context).pop(result);
-          }
+          Navigator.of(context).pop(result);
         }
       }
     } catch (error) {

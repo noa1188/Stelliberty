@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' as flutter_provider;
@@ -9,6 +8,7 @@ import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/ui/widgets/modern_toast.dart';
 import 'package:stelliberty/ui/widgets/subscription/subscription_info_widget.dart';
+import 'package:stelliberty/ui/common/modern_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
@@ -29,16 +29,11 @@ class ProviderViewerDialog extends StatefulWidget {
   State<ProviderViewerDialog> createState() => _ProviderViewerDialogState();
 }
 
-class _ProviderViewerDialogState extends State<ProviderViewerDialog>
-    with TickerProviderStateMixin {
+class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
   // 同步相关常量
   static const int _syncBatchSize = 6; // 每批同步的提供者数量
   static const Duration _batchDelay = Duration(milliseconds: 300); // 批次间延迟
   static const Duration _syncDelay = Duration(milliseconds: 500); // 同步后延迟
-
-  late final AnimationController _animationController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
 
   List<Provider> _providers = [];
   bool _isLoading = true;
@@ -48,28 +43,7 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog>
   @override
   void initState() {
     super.initState();
-
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _animationController.forward();
     _loadProviders();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   // 通用的 Provider 过滤方法
@@ -423,152 +397,20 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              // 背景遮罩
-              Container(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.3),
-              ),
-              // 对话框内容
-              Center(
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Opacity(
-                    opacity: _opacityAnimation.value,
-                    child: _buildDialog(),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 720,
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 40,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildHeader(),
-                  Flexible(fit: FlexFit.loose, child: _buildContent()),
-                  _buildActions(),
-                ],
-              ),
-            ),
-          ),
+    return ModernDialog(
+      title: context.translate.provider.title,
+      titleIcon: Icons.cloud_sync,
+      maxWidth: 720,
+      maxHeightRatio: 0.8,
+      content: _buildContent(),
+      actionsLeft: _buildSyncAllButton(),
+      actionsRight: [
+        DialogActionButton(
+          label: context.translate.common.close,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.white.withValues(alpha: 0.3),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.cloud_sync, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              context.translate.provider.title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _handleClose,
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.close,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
+      onClose: () => Navigator.of(context).pop(),
     );
   }
 
@@ -843,118 +685,31 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog>
     );
   }
 
-  Widget _buildActions() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.white.withValues(alpha: 0.3),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-              width: 1,
-            ),
+  Widget? _buildSyncAllButton() {
+    if (_isSyncingAll) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
-        ),
-        child: Row(
-          children: [
-            // 左侧：同步全部按钮
-            _isSyncingAll
-                ? OutlinedButton.icon(
-                    onPressed: null, // 禁用状态
-                    icon: const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    label: Text(context.translate.provider.syncing),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      side: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.6),
-                      ),
-                      backgroundColor: isDark
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.white.withValues(alpha: 0.6),
-                    ),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: _syncAll,
-                    icon: const Icon(Icons.sync, size: 18),
-                    label: Text(context.translate.provider.syncAll),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      side: BorderSide(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.6),
-                      ),
-                      backgroundColor: isDark
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-            const Spacer(),
-            // 右侧：关闭按钮
-            OutlinedButton(
-              onPressed: _handleClose,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                side: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.white.withValues(alpha: 0.6),
-                ),
-                backgroundColor: isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.white.withValues(alpha: 0.6),
-              ),
-              child: Text(
-                context.translate.common.close,
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.8),
-                ),
-              ),
-            ),
-          ],
-        ),
+          const SizedBox(width: 8),
+          Text(context.translate.provider.syncing),
+        ],
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: _syncAll,
+      icon: const Icon(Icons.sync, size: 18),
+      label: Text(context.translate.provider.syncAll),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
-  }
-
-  void _handleClose() {
-    _animationController.reverse().then((_) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    });
   }
 
   // 执行同步操作（纯逻辑，无副作用）

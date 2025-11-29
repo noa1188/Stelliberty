@@ -141,6 +141,8 @@
     "saveButton": "保存",
     "cancelButton": "取消",
     "confirmButton": "确定",
+    "addModeHint": "提示：订阅开启后会自动同步节点",
+    "editModeHint": "提示：保存后配置将立即生效",
     "configNameLabel": "配置名称",
     "configNameHint": "例如：我的配置",
     "configNameError": "请输入配置名称",

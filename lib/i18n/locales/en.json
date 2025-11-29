@@ -141,6 +141,8 @@
     "saveButton": "Save",
     "cancelButton": "Cancel",
     "confirmButton": "OK",
+    "addModeHint": "Tip: Nodes will be synced automatically after subscription is enabled",
+    "editModeHint": "Tip: Configuration will take effect immediately after saving",
     "configNameLabel": "Profile Name",
     "configNameHint": "e.g., My Profile",
     "configNameError": "Please enter a profile name",
