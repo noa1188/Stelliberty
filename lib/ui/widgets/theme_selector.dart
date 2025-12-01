@@ -8,7 +8,6 @@ import 'package:stelliberty/providers/theme_provider.dart';
 import 'package:stelliberty/ui/common/modern_dropdown_menu.dart';
 import 'package:stelliberty/ui/common/modern_feature_card.dart';
 import 'package:stelliberty/ui/common/modern_dropdown_button.dart';
-import 'package:stelliberty/ui/common/empty.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/utils/logger.dart';
 
@@ -216,7 +215,7 @@ class _ThemeSelectorState extends State<ThemeSelector> {
                     ),
                   );
                 }
-                return empty;
+                return const SizedBox.shrink();
               },
             ),
 

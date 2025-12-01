@@ -42,11 +42,17 @@ class ModernDialog extends StatefulWidget {
   // 标题下方的自定义区域（如搜索框等）
   final Widget? headerWidget;
 
-  // 标题图标
-  final IconData titleIcon;
+  // 标题图标（可选）
+  final IconData? titleIcon;
 
   // 标题图标颜色（默认使用 primary 色）
   final Color? titleIconColor;
+
+  // 是否显示关闭按钮
+  final bool showCloseButton;
+
+  // 是否显示分隔线
+  final bool showDividers;
 
   // 是否显示"已修改"标签
   final bool? isModified;
@@ -84,8 +90,10 @@ class ModernDialog extends StatefulWidget {
     this.titleWidget,
     this.subtitle,
     this.headerWidget,
-    required this.titleIcon,
+    this.titleIcon,
     this.titleIconColor,
+    this.showCloseButton = true,
+    this.showDividers = true,
     this.isModified,
     this.modifiedLabel,
     required this.content,
@@ -196,10 +204,6 @@ class _ModernDialogState extends State<ModernDialog>
                     ? Colors.white.withValues(alpha: 0.08)
                     : Colors.white.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(widget.borderRadius),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-                  width: 1,
-                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.18),
@@ -255,8 +259,8 @@ class _ModernDialogState extends State<ModernDialog>
         color: isDark
             ? Colors.white.withValues(alpha: 0.06)
             : Colors.white.withValues(alpha: 0.3),
-        // 如果有 headerWidget，则不显示底部边框
-        border: widget.headerWidget == null
+        // 根据 showDividers 决定是否显示底部边框
+        border: widget.showDividers && widget.headerWidget == null
             ? Border(
                 bottom: BorderSide(
                   color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
@@ -267,31 +271,33 @@ class _ModernDialogState extends State<ModernDialog>
       ),
       child: Row(
         children: [
-          // 图标容器
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color:
-                  (widget.titleIconColor ??
-                          Theme.of(context).colorScheme.primary)
-                      .withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(
-                DialogConstants.titleIconBorderRadius,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color:
-                      (widget.titleIconColor ??
-                              Theme.of(context).colorScheme.primary)
-                          .withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          // 图标容器（可选）
+          if (widget.titleIcon != null) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color:
+                    (widget.titleIconColor ??
+                            Theme.of(context).colorScheme.primary)
+                        .withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(
+                  DialogConstants.titleIconBorderRadius,
                 ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        (widget.titleIconColor ??
+                                Theme.of(context).colorScheme.primary)
+                            .withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(widget.titleIcon, color: Colors.white, size: 20),
             ),
-            child: Icon(widget.titleIcon, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
+          ],
           // 标题和副标题
           Expanded(
             child: Column(
@@ -334,31 +340,32 @@ class _ModernDialogState extends State<ModernDialog>
               ],
             ),
           ),
-          // 关闭按钮
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onClose ?? _handleClose,
-              borderRadius: BorderRadius.circular(
-                DialogConstants.closeButtonBorderRadius,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    DialogConstants.closeButtonBorderRadius,
-                  ),
+          // 关闭按钮（可选）
+          if (widget.showCloseButton)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onClose ?? _handleClose,
+                borderRadius: BorderRadius.circular(
+                  DialogConstants.closeButtonBorderRadius,
                 ),
-                child: Icon(
-                  Icons.close,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  size: 20,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      DialogConstants.closeButtonBorderRadius,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    size: 20,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -376,12 +383,15 @@ class _ModernDialogState extends State<ModernDialog>
           color: isDark
               ? Colors.white.withValues(alpha: 0.06)
               : Colors.white.withValues(alpha: 0.3),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
-              width: 1,
-            ),
-          ),
+          // 根据 showDividers 决定是否显示顶部边框
+          border: widget.showDividers
+              ? Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: isDark ? 0.1 : 0.3),
+                    width: 1,
+                  ),
+                )
+              : null,
         ),
         child: Row(
           children: [

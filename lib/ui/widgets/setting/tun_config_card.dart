@@ -7,7 +7,6 @@ import 'package:stelliberty/ui/common/modern_dropdown_menu.dart';
 import 'package:stelliberty/ui/common/modern_dropdown_button.dart';
 import 'package:stelliberty/ui/common/modern_text_field.dart';
 import 'package:stelliberty/ui/common/modern_switch.dart';
-import 'package:stelliberty/ui/common/empty.dart';
 import 'package:stelliberty/ui/widgets/modern_toast.dart';
 import 'package:stelliberty/clash/manager/manager.dart';
 import 'package:stelliberty/clash/providers/service_provider.dart';
@@ -198,7 +197,7 @@ class _TunConfigCardState extends State<TunConfigCard> {
     final theme = Theme.of(context);
 
     if (Platform.isAndroid) {
-      return empty;
+      return const SizedBox.shrink();
     }
 
     return ModernFeatureCard(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stelliberty/clash/data/connection_model.dart';
 import 'package:stelliberty/i18n/i18n.dart';
-import 'package:stelliberty/ui/common/empty.dart';
 import 'package:stelliberty/ui/common/modern_dialog.dart';
 
 // 连接详情对话框
@@ -118,7 +117,7 @@ class ConnectionDetailDialog extends StatelessWidget {
 
     // 如果分组内没有有效信息，则不显示该分组
     if (validItems.isEmpty) {
-      return empty;
+      return const SizedBox.shrink();
     }
 
     return Padding(
