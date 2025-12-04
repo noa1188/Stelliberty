@@ -12,6 +12,9 @@ class SystemProxyManager {
   bool _systemProxyEnabled = false;
   bool get isSystemProxyEnabled => _systemProxyEnabled;
 
+  // 标记当前实例是否真正启用过系统代理（用于多实例场景）
+  bool _hasEnabledSystemProxy = false;
+
   SystemProxyManager({
     required bool Function() isRunning,
     required int Function() getHttpPort,
@@ -46,6 +49,7 @@ class SystemProxyManager {
         pacScript: pacScript,
       );
 
+      _hasEnabledSystemProxy = true;
       if (usePacMode) {
         Logger.info('系统代理已更新 (PAC 模式)');
       } else {
@@ -80,6 +84,7 @@ class SystemProxyManager {
       );
 
       _systemProxyEnabled = true;
+      _hasEnabledSystemProxy = true;
       if (usePacMode) {
         Logger.info('系统代理已启用 (PAC 模式)');
       } else {
@@ -95,6 +100,14 @@ class SystemProxyManager {
 
   // 禁用系统代理（仅代理，核心继续运行）
   Future<bool> disableSystemProxy() async {
+    // 如果当前实例从未启用过系统代理，跳过禁用操作（多实例场景保护）
+    if (!_hasEnabledSystemProxy) {
+      Logger.debug('当前实例未启用过系统代理，跳过禁用操作（避免影响其他实例）');
+      _systemProxyEnabled = false;
+      _notifyListeners();
+      return true;
+    }
+
     try {
       final currentProxyStatus = await SystemProxy.getStatus();
       final isProxyEnabled = currentProxyStatus['enabled'] as bool? ?? false;
@@ -102,6 +115,7 @@ class SystemProxyManager {
 
       if (!isProxyEnabled) {
         _systemProxyEnabled = false;
+        _hasEnabledSystemProxy = false;
         _notifyListeners();
         return true;
       }
@@ -115,12 +129,14 @@ class SystemProxyManager {
           '当前系统代理 ($currentProxyServer) 不是由本应用设置的 ($expectedProxyServer)，跳过禁用操作',
         );
         _systemProxyEnabled = false;
+        _hasEnabledSystemProxy = false;
         _notifyListeners();
         return true;
       }
 
       await SystemProxy.disable();
       _systemProxyEnabled = false;
+      _hasEnabledSystemProxy = false;
       Logger.info('系统代理已禁用（核心继续运行）');
       _notifyListeners();
       return true;
