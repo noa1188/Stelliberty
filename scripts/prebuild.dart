@@ -438,7 +438,12 @@ Future<void> downloadAndSetupCore({
       final assets = releaseInfo['assets'] as List;
 
       final asset = assets.firstWhere(
-        (a) => (a['name'] as String).contains(assetKeyword),
+        (a) {
+          final name = a['name'] as String;
+          // 确保只选择脚本支持解压的 .gz 或 .zip 格式，避免选中 .deb 或 .rpm
+          return name.contains(assetKeyword) &&
+              (name.endsWith('.gz') || name.endsWith('.zip'));
+        },
         orElse: () => null,
       );
 
