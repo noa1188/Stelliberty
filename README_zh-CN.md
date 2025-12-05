@@ -11,7 +11,7 @@
 ![License](https://img.shields.io/badge/license-Stelliberty-green?style=flat-square)
 
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-未经验证-gray?style=flat-square&logo=linux&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/macOS-未经验证-gray?style=flat-square&logo=apple&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-暂不支持-lightgray?style=flat-square&logo=android&logoColor=white)
 
@@ -60,11 +60,11 @@
 
 ### 系统要求
 
-- **Windows**: Windows 10/11（64 位）
-- **Linux**: 未经验证
+- **Windows**: Windows 10/11 (x64 / arm64)
+- **Linux**: 主流发行版 (x64 / arm64)
 - **macOS**: 未经验证
 
-> ⚠️ **平台状态**：目前仅在 Windows 上完整测试。Linux 和 macOS 支持未经验证，部分功能可能不完整。
+> ⚠️ **平台状态**：目前已在 Windows 和 Linux 上完整测试。macOS 支持未经验证，部分功能可能不完整。
 
 ### 安装方法
 
@@ -103,6 +103,18 @@
 > 💡 **建议**：为获得最佳体验，建议安装到非系统盘（如 `D:\Stelliberty`、`E:\Apps\Stelliberty`），避免潜在的权限问题。
 
 > 📌 **注意**：默认安装路径 `%LOCALAPPDATA%\Programs\Stelliberty` 无需特殊权限，推荐大多数用户使用。
+
+**安装方式（Linux）：**
+
+#### 便携版（ZIP 压缩包）
+1. 从发布页面下载适用于您架构（`amd64` 或 `arm64`）的 `.zip` 文件
+2. 解压到任意位置（如 `~/Stelliberty`）
+3. **重要：** 为可执行文件赋予运行权限：
+   ```bash
+   chmod +x ./stelliberty
+   ```
+4. 直接运行解压目录中的 `./stelliberty`
+5. ✅ 开箱即用
 
 ### 问题反馈
 

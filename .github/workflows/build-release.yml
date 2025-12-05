@@ -241,30 +241,40 @@ jobs:
 
   # ------------ 构建 job（依赖 prepare） ------------
   build:
-    name: 构建 Windows-${{ matrix.arch }}
+    name: 构建 ${{ matrix.platform }}-${{ matrix.arch }}
     needs: prepare
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - arch: x64
-            runs-on: windows-latest
-          - arch: arm64
-            runs-on: windows-11-arm
-    runs-on: ${{ matrix.runs-on }}
+          - platform: windows
+            os: windows-latest
+            arch: x64
+          - platform: windows
+            os: windows-11-arm
+            arch: arm64
+          - platform: linux
+            os: ubuntu-22.04
+            arch: amd64
+          - platform: linux
+            os: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v6
 
       - name: 输出构建信息
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host "============================================"
-          Write-Host "📦 包名:        ${{ needs.prepare.outputs.pkg }}"
-          Write-Host "⏫ 版本号:      ${{ needs.prepare.outputs.version }}"
-          Write-Host "🏷️ Tag:         ${{ needs.prepare.outputs.tag }}"
-          Write-Host "🖥️ 架构:        ${{ matrix.arch }}"
-          Write-Host "============================================"
+          echo "============================================"
+          echo "📦 包名:        ${{ needs.prepare.outputs.pkg }}"
+          echo "⏫ 版本号:      ${{ needs.prepare.outputs.version }}"
+          echo "🏷️ Tag:         ${{ needs.prepare.outputs.tag }}"
+          echo "🖥️ 平台:        ${{ matrix.platform }}"
+          echo "⚙️ 架构:        ${{ matrix.arch }}"
+          echo "============================================"
 
       - name: 配置 Flutter
         uses: subosito/flutter-action@v2
@@ -275,27 +285,29 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: 安装项目依赖
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host "📦 正在安装项目依赖..."
-          
-          Write-Host "  ➤ 安装 Flutter 主项目依赖"
+          echo "📦 正在安装项目依赖..."
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            echo "  ➤ 安装 Linux 构建依赖..."
+            sudo apt-get update
+            sudo apt-get install -y libgtk-3-dev libappindicator3-dev adwaita-icon-theme-full
+            echo "  ✅ Linux 依赖安装完成"
+          fi
+          echo "  ➤ 安装 Flutter 主项目依赖"
           flutter pub get
-          
-          Write-Host "  ➤ 安装 rinf_cli"
+          echo "  ➤ 安装 rinf_cli"
           cargo install rinf_cli
-          
-          Write-Host "✅ 所有依赖安装完成"
+          echo "✅ 所有依赖安装完成"
 
       - name: 安装预构建脚本依赖
         run: dart pub get
         working-directory: scripts
 
       - name: 运行预构建脚本
-        shell: pwsh
-        run: |
-          Write-Host "🔧 正在运行预构建脚本（包含 Inno Setup 安装）..."
-          dart run scripts/prebuild.dart --installer
+        run: dart run scripts/prebuild.dart --installer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 生成 Rust 桥接代码
         run: rinf gen
@@ -304,40 +316,47 @@ jobs:
         run: dart run slang
 
       - name: 运行构建脚本
-        shell: pwsh
-        run: |
-          Write-Host "🏗️ 正在运行构建脚本..."
-          dart run scripts/build.dart --with-installer
+        run: dart run scripts/build.dart --with-installer
 
       - name: 复制构建产物到 dist
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host "📦 正在复制构建产物..."
-          
-          # 确保 dist 目录存在
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          
-          # 检查 build/packages 目录
-          if (Test-Path "build/packages") {
-            # 复制所有文件到 dist
-            Copy-Item -Path "build/packages/*" -Destination "dist/" -Recurse -Force
-            
-            Write-Host "✅ 构建产物已复制到 dist/"
-            Write-Host ""
-            Write-Host "📦 产物列表:"
-            Get-ChildItem -Path "dist/" | ForEach-Object {
-              $size = if ($_.PSIsContainer) { "目录" } else { "$([math]::Round($_.Length / 1MB, 2)) MB" }
-              Write-Host "  - $($_.Name) ($size)"
-            }
-          } else {
-            Write-Host "❌ 错误: build/packages 目录不存在"
-            exit 1
-          }
+          echo "📦 正在复制构建产物..."
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            pwsh -c '
+              New-Item -ItemType Directory -Force -Path dist | Out-Null
+              if (Test-Path "build/packages") {
+                Copy-Item -Path "build/packages/*" -Destination "dist/" -Recurse -Force
+                Write-Host "✅ 构建产物已复制到 dist/"
+                Write-Host ""
+                Write-Host "📦 产物列表:"
+                Get-ChildItem -Path "dist/" | ForEach-Object {
+                  $size = if ($_.PSIsContainer) { "目录" } else { "$([math]::Round($_.Length / 1MB, 2)) MB" }
+                  Write-Host "  - $($_.Name) ($size)"
+                }
+              } else {
+                Write-Host "❌ 错误: build/packages 目录不存在"
+                exit 1
+              }
+            '
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            mkdir -p dist
+            if [ -d "build/packages" ]; then
+              cp -r build/packages/* dist/
+              echo "✅ 构建产物已复制到 dist/"
+              echo ""
+              echo "📦 产物列表:"
+              ls -lh dist/
+            else
+              echo "❌ 错误: build/packages 目录不存在"
+              exit 1
+            fi
+          fi
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.prepare.outputs.pkg }}-windows-${{ matrix.arch }}
+          name: ${{ needs.prepare.outputs.pkg }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/*
           retention-days: 90
 
@@ -409,6 +428,18 @@ jobs:
             ---
             
             ## ❓ 故障排查
+
+            ### Linux 启动问题
+            
+            如果无法启动应用，请确保已为可执行文件赋予运行权限：
+            
+            ```bash
+            # 进入应用目录
+            cd /path/to/stelliberty
+            
+            # 赋予权限
+            chmod +x ./stelliberty
+            ```
             
             ### 端口被占用（Windows）
             

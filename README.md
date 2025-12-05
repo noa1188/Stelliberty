@@ -11,8 +11,7 @@
 ![License](https://img.shields.io/badge/license-Stelliberty-green?style=flat-square)
 
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-unverified-gray?style=flat-square&logo=linux&logoColor=white)
-![macOS](https://img.shields.io/badge/macOS-unverified-gray?style=flat-square&logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)| ![macOS](https://img.shields.io/badge/macOS-unverified-gray?style=flat-square&logo=apple&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-not_supported-lightgray?style=flat-square&logo=android&logoColor=white)
 
 A modern cross-platform Clash client built with Flutter and Rust
@@ -60,11 +59,11 @@ This might be one of the most detail-oriented Flutter desktop applications:
 
 ### System Requirements
 
-- **Windows**: Windows 10/11 (64-bit)
-- **Linux**: Unverified
+- **Windows**: Windows 10/11 (x64 / arm64)
+- **Linux**: Mainstream distributions (x64 / arm64)
 - **macOS**: Unverified
 
-> ⚠️ **Platform Status**: Currently only tested on Windows. Linux and macOS support is unverified and may have incomplete functionality.
+> ⚠️ **Platform Status**: Fully tested on Windows and Linux. macOS support is unverified and may have incomplete functionality.
 
 ### Installation
 
@@ -103,6 +102,18 @@ The installer enforces the following path restrictions for security and stabilit
 > 💡 **Recommendation**: For best experience, install to non-system drives (e.g., `D:\Stelliberty`, `E:\Apps\Stelliberty`) to avoid potential permission issues.
 
 > 📌 **Note**: The default installation path `%LOCALAPPDATA%\Programs\Stelliberty` requires no special permissions and is recommended for most users.
+
+**Installation Methods (Linux):**
+
+#### Portable Version (ZIP Archive)
+1. Download the `.zip` file for your architecture (`amd64` or `arm64`) from the release page.
+2. Extract it to your desired location (e.g., `~/Stelliberty`).
+3. **Important:** Grant executable permission to the binary:
+   ```bash
+   chmod +x ./stelliberty
+   ```
+4. Run `./stelliberty` from the extracted directory.
+5. ✅ Ready to use.
 
 ### Reporting Issues
 

@@ -212,7 +212,13 @@ Future<void> initializeWindowServices() async {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     await Window.initialize();
     await windowManager.ensureInitialized();
-    await Window.hideWindowControls();
+
+    if (Platform.isLinux) {
+      await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+    } else {
+      await Window.hideWindowControls();
+    }
+
     await AppTrayManager().initialize();
   }
 }
