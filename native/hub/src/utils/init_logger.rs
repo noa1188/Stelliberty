@@ -174,5 +174,4 @@ pub fn set_app_log_enabled(enabled: bool) {
 /// 初始化日志系统（幂等、懒加载、线程安全）
 pub fn setup_logger() {
     Lazy::force(&LOGGER);
-    super::messages::init(); // 启动消息监听器
 }

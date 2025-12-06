@@ -3,11 +3,11 @@
 // 目的：提供 YAML 和 JavaScript 格式的配置覆写功能
 
 pub mod js_executor;
-pub mod messages;
 pub mod processor;
+pub mod signals;
 pub mod yaml_merger;
 
-pub use messages::{ApplyOverridesRequest, ParseSubscriptionRequest};
+pub use signals::{ApplyOverridesRequest, ParseSubscriptionRequest};
 
 use rinf::DartSignal;
 use tokio::spawn;

@@ -6,7 +6,7 @@ use rinf::{DartSignal, RustSignal};
 use serde::{Deserialize, Serialize};
 
 use super::runtime_params::RuntimeConfigParams;
-use crate::clash::r#override::messages::OverrideConfig;
+use crate::clash::overrides::signals::OverrideConfig;
 
 // 生成运行时配置请求
 #[derive(Debug, Clone, Serialize, Deserialize, DartSignal)]
@@ -70,7 +70,7 @@ fn generate_runtime_config_internal(
         log::info!("应用 {} 个覆写…", overrides.len());
 
         // 创建覆写处理器
-        let mut processor = crate::clash::r#override::processor::OverrideProcessor::new()
+        let mut processor = crate::clash::overrides::processor::OverrideProcessor::new()
             .map_err(|e| format!("初始化覆写处理器失败：{}", e))?;
 
         processor.apply_overrides(base_content, overrides.to_vec())?

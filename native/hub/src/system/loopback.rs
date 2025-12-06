@@ -404,7 +404,7 @@ pub fn set_loopback_exemption(package_family_name: &str, enabled: bool) -> Resul
 
 // 初始化 UWP 回环豁免消息监听器
 pub fn init() {
-    use crate::system::messages::{GetAppContainers, SaveLoopbackConfiguration, SetLoopback};
+    use crate::system::signals::{GetAppContainers, SaveLoopbackConfiguration, SetLoopback};
 
     // 修复：避免嵌套 spawn，直接在监听循环中处理消息
     spawn(async {

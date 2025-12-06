@@ -2,7 +2,7 @@
 //
 // 负责启动、停止和管理 Clash 核心进程
 
-use super::messages::{ClashProcessResult, StartClashProcess, StopClashProcess};
+use super::signals::{ClashProcessResult, StartClashProcess, StopClashProcess};
 use once_cell::sync::Lazy;
 use rinf::RustSignal;
 use std::sync::Mutex;

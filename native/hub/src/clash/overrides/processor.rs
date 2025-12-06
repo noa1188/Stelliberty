@@ -3,7 +3,7 @@
 // 目的：协调 YAML 和 JavaScript 覆写的应用流程
 
 use super::js_executor::JsExecutor;
-use super::messages::{OverrideConfig, OverrideFormat};
+use super::signals::{OverrideConfig, OverrideFormat};
 use super::yaml_merger::YamlMerger;
 
 // 覆写处理器

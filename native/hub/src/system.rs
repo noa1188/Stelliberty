@@ -7,13 +7,13 @@ pub mod app_update;
 pub mod auto_start;
 #[cfg(target_os = "windows")]
 pub mod loopback;
-pub mod messages;
+pub mod signals;
 pub mod url_launcher;
 
 #[allow(unused_imports)]
 pub use auto_start::{get_auto_start_status, set_auto_start_status};
 #[allow(unused_imports)]
-pub use messages::{
+pub use signals::{
     // 应用更新消息
     AppUpdateResult,
     // 自启动消息
@@ -29,7 +29,7 @@ pub use messages::{
 // UWP 回环豁免消息（仅 Windows）
 #[cfg(target_os = "windows")]
 #[allow(unused_imports)]
-pub use messages::{
+pub use signals::{
     AppContainerInfo, AppContainersComplete, AppContainersList, GetAppContainers,
     SaveLoopbackConfiguration, SaveLoopbackConfigurationResult, SetLoopback, SetLoopbackResult,
 };

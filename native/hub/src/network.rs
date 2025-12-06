@@ -6,18 +6,18 @@ use rinf::DartSignal;
 use tokio::spawn;
 
 pub mod interfaces;
-pub mod messages;
 pub mod proxy;
+pub mod signals;
 
 #[allow(unused_imports)]
 pub use interfaces::{get_hostname, get_network_addresses};
 #[allow(unused_imports)]
-pub use messages::{
+pub use proxy::{ProxyInfo, ProxyResult, disable_proxy, enable_proxy, get_proxy_info};
+#[allow(unused_imports)]
+pub use signals::{
     DisableSystemProxy, EnableSystemProxy, GetNetworkInterfaces, GetSystemProxy,
     NetworkInterfacesInfo, SystemProxyInfo, SystemProxyResult,
 };
-#[allow(unused_imports)]
-pub use proxy::{ProxyInfo, ProxyResult, disable_proxy, enable_proxy, get_proxy_info};
 
 // 初始化网络模块
 //

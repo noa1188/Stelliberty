@@ -16,7 +16,7 @@ fn is_ipc_not_ready_error(error_msg: &str) -> bool {
         || error_msg.contains("os error 61")
         || error_msg.contains("Connection refused")
 }
-use super::messages::{
+use super::signals::{
     IpcDeleteRequest, IpcGetRequest, IpcLogData, IpcPatchRequest, IpcPostRequest, IpcPutRequest,
     IpcResponse, IpcTrafficData, StartLogStream, StartTrafficStream, StopLogStream,
     StopTrafficStream, StreamResult,
