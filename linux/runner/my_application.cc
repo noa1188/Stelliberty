@@ -24,6 +24,21 @@ static void my_application_activate(GApplication* application) {
   gtk_window_set_decorated(window, FALSE);
 
   gtk_window_set_default_size(window, 900, 660);
+
+  // 设置窗口图标
+  g_autoptr(GError) icon_error = nullptr;
+  g_autofree gchar* exe_path = g_file_read_link("/proc/self/exe", nullptr);
+  if (exe_path != nullptr) {
+    g_autofree gchar* exe_dir = g_path_get_dirname(exe_path);
+    g_autofree gchar* icon_path = g_build_filename(
+        exe_dir, "data", "flutter_assets", "assets", "icons", "app_icon.png", nullptr);
+    GdkPixbuf* icon = gdk_pixbuf_new_from_file(icon_path, &icon_error);
+    if (icon != nullptr) {
+      gtk_window_set_icon(window, icon);
+      g_object_unref(icon);
+    }
+  }
+
   gtk_widget_show(GTK_WIDGET(window));
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
