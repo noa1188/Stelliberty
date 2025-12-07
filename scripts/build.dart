@@ -1129,7 +1129,8 @@ Future<void> packDeb({
     await _copyDirectory(Directory(sourceDir), Directory(installDir));
 
     // 生成 control 文件
-    final controlContent = '''
+    final controlContent =
+        '''
 Package: $appNameLower
 Version: $version
 Section: net
@@ -1144,7 +1145,8 @@ Depends: libgtk-3-0, libblkid1, liblzma5
     await File(p.join(debianDir, 'control')).writeAsString(controlContent);
 
     // 生成 postinst 脚本（安装后执行）
-    final postinstContent = '''
+    final postinstContent =
+        '''
 #!/bin/bash
 set -e
 
@@ -1167,7 +1169,8 @@ fi
     await Process.run('chmod', ['+x', postinstFile.path]);
 
     // 生成 prerm 脚本（卸载前执行）
-    final prermContent = '''
+    final prermContent =
+        '''
 #!/bin/bash
 set -e
 
@@ -1179,7 +1182,8 @@ rm -f /usr/local/bin/$appNameLower
     await Process.run('chmod', ['+x', prermFile.path]);
 
     // 生成 .desktop 文件
-    final desktopContent = '''
+    final desktopContent =
+        '''
 [Desktop Entry]
 Type=Application
 Name=$appNameCapitalized
@@ -1196,7 +1200,14 @@ StartupNotify=true
 
     // 复制图标（如果存在）
     final iconSource = File(
-      p.join(projectRoot, 'scripts', 'pre_assets', 'tray_icon', 'linux', 'proxy_enabled.png'),
+      p.join(
+        projectRoot,
+        'scripts',
+        'pre_assets',
+        'tray_icon',
+        'linux',
+        'proxy_enabled.png',
+      ),
     );
     if (await iconSource.exists()) {
       await iconSource.copy(p.join(iconsDir, '$appNameLower.png'));
@@ -1276,14 +1287,18 @@ Future<void> packRpm({
     await _copyDirectory(Directory(sourceDir), Directory(tarSourceDir));
 
     // 创建 tarball
-    await Process.run(
-      'tar',
-      ['-czf', tarballPath, '-C', tarTempDir.path, '$appNameLower-$version'],
-    );
+    await Process.run('tar', [
+      '-czf',
+      tarballPath,
+      '-C',
+      tarTempDir.path,
+      '$appNameLower-$version',
+    ]);
     await tarTempDir.delete(recursive: true);
 
     // 生成 SPEC 文件
-    final specContent = '''
+    final specContent =
+        '''
 Name:           $appNameLower
 Version:        $version
 Release:        1%{?dist}
@@ -1342,7 +1357,9 @@ update-desktop-database /usr/share/applications || true
 * \$(date '+%a %b %d %Y') $appNameCapitalized Team <support@$appNameLower.app> - $version-1
 - Initial package
 ''';
-    await File(p.join(specDir, '$appNameLower.spec')).writeAsString(specContent);
+    await File(
+      p.join(specDir, '$appNameLower.spec'),
+    ).writeAsString(specContent);
 
     // 构建 RPM 包
     final result = await Process.run('rpmbuild', [
@@ -1361,7 +1378,10 @@ update-desktop-database /usr/share/applications || true
     // 查找生成的 RPM 文件
     final rpmsDir = Directory(p.join(rpmBuildDir, 'RPMS', arch));
     if (await rpmsDir.exists()) {
-      final rpmFiles = await rpmsDir.list().where((f) => f.path.endsWith('.rpm')).toList();
+      final rpmFiles = await rpmsDir
+          .list()
+          .where((f) => f.path.endsWith('.rpm'))
+          .toList();
       if (rpmFiles.isNotEmpty) {
         await Directory(p.dirname(outputPath)).create(recursive: true);
         await File(rpmFiles.first.path).copy(outputPath);
@@ -1390,7 +1410,12 @@ Future<void> packAppImage({
   log('▶️  正在打包为 AppImage...');
 
   // appimagetool 存放在 assets/tools 目录
-  final appImageToolPath = p.join(projectRoot, 'assets', 'tools', 'appimagetool');
+  final appImageToolPath = p.join(
+    projectRoot,
+    'assets',
+    'tools',
+    'appimagetool',
+  );
   if (!await File(appImageToolPath).exists()) {
     log('⚠️  appimagetool 未安装，跳过 AppImage 打包');
     log('   提示：运行 dart run scripts/prebuild.dart --installer 安装打包工具');
@@ -1422,7 +1447,8 @@ Future<void> packAppImage({
     await _copyDirectory(Directory(sourceDir), Directory(usrBinDir));
 
     // 生成 AppRun 脚本
-    final appRunContent = '''
+    final appRunContent =
+        '''
 #!/bin/bash
 SELF=\$(readlink -f "\$0")
 HERE=\${SELF%/*}
@@ -1435,7 +1461,8 @@ exec "\$HERE/usr/bin/$appNameLower" "\$@"
     await Process.run('chmod', ['+x', appRunFile.path]);
 
     // 生成 .desktop 文件
-    final desktopContent = '''
+    final desktopContent =
+        '''
 [Desktop Entry]
 Type=Application
 Name=$appNameCapitalized
@@ -1455,7 +1482,14 @@ StartupNotify=true
 
     // 复制图标
     final iconSource = File(
-      p.join(projectRoot, 'scripts', 'pre_assets', 'tray_icon', 'linux', 'proxy_enabled.png'),
+      p.join(
+        projectRoot,
+        'scripts',
+        'pre_assets',
+        'tray_icon',
+        'linux',
+        'proxy_enabled.png',
+      ),
     );
     if (await iconSource.exists()) {
       await iconSource.copy(p.join(appDir, '$appNameLower.png'));
@@ -1523,7 +1557,8 @@ Future<void> main(List<String> args) async {
     ..addFlag(
       'with-installer',
       negatable: false,
-      help: '同时生成 ZIP 便携版和平台特定安装包（Windows: ZIP + EXE, Linux: ZIP + deb + rpm + AppImage）',
+      help:
+          '同时生成 ZIP 便携版和平台特定安装包（Windows: ZIP + EXE, Linux: ZIP + deb + rpm + AppImage）',
     )
     ..addFlag(
       'installer-only',
@@ -1594,7 +1629,8 @@ Future<void> main(List<String> args) async {
   // --installer-only：只生成平台安装包
   final shouldPackZip = !installerOnly;
   final shouldPackInstaller =
-      (withInstaller || installerOnly) && (Platform.isWindows || Platform.isLinux);
+      (withInstaller || installerOnly) &&
+      (Platform.isWindows || Platform.isLinux);
 
   if (installerOnly && !(Platform.isWindows || Platform.isLinux)) {
     log('❌ 错误: --installer-only 仅支持 Windows 和 Linux 平台');

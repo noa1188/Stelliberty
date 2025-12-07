@@ -114,7 +114,7 @@ String getCurrentArch() {
   if (version.contains('arm64') || version.contains('aarch64')) {
     return 'arm64';
   }
-  return 'amd64';
+  return 'x64';
 }
 
 // 配置 HttpClient 的代理设置
@@ -437,15 +437,12 @@ Future<void> downloadAndSetupCore({
       final releaseInfo = json.decode(response.body);
       final assets = releaseInfo['assets'] as List;
 
-      final asset = assets.firstWhere(
-        (a) {
-          final name = a['name'] as String;
-          // 确保只选择脚本支持解压的 .gz 或 .zip 格式，避免选中 .deb 或 .rpm
-          return name.contains(assetKeyword) &&
-              (name.endsWith('.gz') || name.endsWith('.zip'));
-        },
-        orElse: () => null,
-      );
+      final asset = assets.firstWhere((a) {
+        final name = a['name'] as String;
+        // 确保只选择脚本支持解压的 .gz 或 .zip 格式，避免选中 .deb 或 .rpm
+        return name.contains(assetKeyword) &&
+            (name.endsWith('.gz') || name.endsWith('.zip'));
+      }, orElse: () => null);
 
       if (asset == null) {
         throw Exception('在最新的 Release 中未找到匹配 "$assetKeyword" 的资源文件。');
@@ -1119,8 +1116,7 @@ Future<void> _updateAppImageToolIfNeeded(
       final latestTag = data['tag_name'] as String;
 
       // 比较版本（简单字符串比较）
-      if (!currentVersion.contains(latestTag) &&
-          latestTag != currentVersion) {
+      if (!currentVersion.contains(latestTag) && latestTag != currentVersion) {
         log('💡 发现新版本: $latestTag（当前: $currentVersion）');
         log('🔄 正在更新 appimagetool...');
         await _downloadLatestAppImageTool(projectRoot);
@@ -1167,13 +1163,10 @@ Future<void> _downloadLatestAppImageTool(String projectRoot) async {
       assetKeyword = 'x86_64';
     }
 
-    final asset = assets.firstWhere(
-      (a) {
-        final name = a['name'] as String;
-        return name.contains(assetKeyword) && name.endsWith('.AppImage');
-      },
-      orElse: () => null,
-    );
+    final asset = assets.firstWhere((a) {
+      final name = a['name'] as String;
+      return name.contains(assetKeyword) && name.endsWith('.AppImage');
+    }, orElse: () => null);
 
     if (asset == null) {
       throw Exception('未找到适合 $arch 架构的 appimagetool');
@@ -1246,11 +1239,10 @@ Future<void> _runSudoCommand(List<String> command) async {
   log('🔐 需要管理员权限执行: ${command.join(' ')}');
 
   // 使用 -S 选项从 stdin 读取密码
-  final process = await Process.start(
-    'sudo',
-    ['-S', ...command],
-    mode: ProcessStartMode.inheritStdio,
-  );
+  final process = await Process.start('sudo', [
+    '-S',
+    ...command,
+  ], mode: ProcessStartMode.inheritStdio);
 
   final exitCode = await process.exitCode;
   if (exitCode != 0) {
