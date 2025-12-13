@@ -106,6 +106,23 @@ The installer enforces the following path restrictions for security and stabilit
 
 **Installation Methods (Linux):**
 
+#### Arch Linux (AUR)
+Supported architectures: `x86_64`, `aarch64`
+
+Using `yay`:
+```bash
+yay -S stelliberty-bin
+```
+
+Using `paru`:
+```bash
+paru -S stelliberty-bin
+```
+
+> AUR Package: [stelliberty-bin](https://aur.archlinux.org/packages/stelliberty-bin)
+
+---
+
 #### Portable Version (ZIP Archive)
 1. Download the `.zip` file for your architecture (`amd64` or `arm64`) from the release page.
 2. Extract it to your desired location (e.g., `~/Stelliberty`).

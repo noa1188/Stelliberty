@@ -107,6 +107,23 @@
 
 **安装方式（Linux）：**
 
+#### Arch Linux (AUR)
+支持架构：`x86_64`、`aarch64`
+
+使用 `yay`:
+```bash
+yay -S stelliberty-bin
+```
+
+使用 `paru`:
+```bash
+paru -S stelliberty-bin
+```
+
+> AUR 软件包链接：[stelliberty-bin](https://aur.archlinux.org/packages/stelliberty-bin)
+
+---
+
 #### 便携版（ZIP 压缩包）
 1. 从发布页面下载适用于您架构（`amd64` 或 `arm64`）的 `.zip` 文件
 2. 解压到任意位置（如 `~/Stelliberty`）
