@@ -983,7 +983,7 @@
     "selectBackupFile": "选择备份文件",
     "backupSuccess": "备份创建成功",
     "backupFailed": "备份创建失败",
-    "restoreSuccess": "数据还原成功，请重启应用使更改生效",
+    "restoreSuccess": "数据还原成功",
     "restoreFailed": "数据还原失败",
     "restoreConfirm": "确认还原",
     "restoreConfirmMessage": "还原备份将覆盖当前所有数据，确定要继续吗？\n\n⚠️ 此操作不可撤销，建议先创建当前数据的备份",

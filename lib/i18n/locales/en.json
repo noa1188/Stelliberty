@@ -992,7 +992,7 @@
     "selectBackupFile": "Select Backup File",
     "backupSuccess": "Backup created successfully",
     "backupFailed": "Failed to create backup",
-    "restoreSuccess": "Data restored successfully, please restart the app for changes to take effect",
+    "restoreSuccess": "Data restored successfully",
     "restoreFailed": "Failed to restore data",
     "restoreConfirm": "Confirm Restore",
     "restoreConfirmMessage": "Restoring backup will overwrite all current data. Continue?\n\n⚠️ This action cannot be undone. Consider creating a backup of current data first",

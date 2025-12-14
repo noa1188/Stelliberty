@@ -992,7 +992,7 @@
     "selectBackupFile": "バックアップファイルを選択",
     "backupSuccess": "バックアップが正常に作成されました",
     "backupFailed": "バックアップの作成に失敗しました",
-    "restoreSuccess": "データが正常に復元されました。変更を適用するにはアプリを再起動してください",
+    "restoreSuccess": "データが正常に復元されました",
     "restoreFailed": "データの復元に失敗しました",
     "restoreConfirm": "復元の確認",
     "restoreConfirmMessage": "バックアップを復元すると、現在のすべてのデータが上書きされます。続行しますか？\n\n⚠️ この操作は元に戻せません。まず現在のデータのバックアップを作成することをお勧めします",

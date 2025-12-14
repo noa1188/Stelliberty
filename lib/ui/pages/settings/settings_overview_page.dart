@@ -18,12 +18,21 @@ class SettingsOverviewPage extends StatefulWidget {
 
 class _SettingsOverviewPageState extends State<SettingsOverviewPage> {
   String _version = '';
+  bool _versionLoaded = false;
 
   @override
   void initState() {
     super.initState();
     Logger.info('初始化 SettingsOverviewPage');
-    _loadVersion();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_versionLoaded) {
+      _versionLoaded = true;
+      _loadVersion();
+    }
   }
 
   Future<void> _loadVersion() async {
