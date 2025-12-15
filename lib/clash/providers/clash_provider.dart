@@ -147,6 +147,21 @@ class ClashProvider extends ChangeNotifier {
         lowerType == 'fallback';
   }
 
+  // 检查是否为 IPC 未就绪错误
+  // 这类错误在 Clash 启动期间或系统唤醒后是正常的临时状态
+  static bool _isIpcNotReadyError(String errorMessage) {
+    // Windows: os error 2 (系统找不到指定的文件)
+    // Linux: os error 111 (ECONNREFUSED)
+    // macOS: os error 61 (ECONNREFUSED)
+    return errorMessage.contains('os error 2') ||
+        errorMessage.contains('os error 111') ||
+        errorMessage.contains('os error 61') ||
+        (errorMessage.contains('系统找不到指定的文件') &&
+            errorMessage.contains('pipe')) ||
+        (errorMessage.contains('Connection refused') &&
+            errorMessage.contains('IPC'));
+  }
+
   ClashProvider() {
     // 初始化服务类
     _configService = ConfigManagementService(_clashManager);
@@ -209,9 +224,17 @@ class ClashProvider extends ChangeNotifier {
       );
       notifyListeners();
     } catch (e) {
+      final errorMsg = e.toString();
+
+      // 检查是否为 IPC 相关错误（正常情况下不应该发生，因为这是从文件加载）
+      final isIpcError = _isIpcNotReadyError(errorMsg);
+
+      // 从配置文件加载时的 IPC 错误不应该向 UI 传递（这不是用户配置文件的问题）
+      if (!isIpcError) {
+        _errorMessage = '从配置文件加载代理信息失败：$e';
+        notifyListeners();
+      }
       Logger.error('从配置文件加载代理信息失败：$e');
-      _errorMessage = '从配置文件加载代理信息失败：$e';
-      notifyListeners();
     }
   }
 
@@ -421,21 +444,38 @@ class ClashProvider extends ChangeNotifier {
 
       // 添加重试逻辑，避免因 Clash API 繁忙导致超时
       Map<String, dynamic>? proxies;
-      int retryCount = 0;
+      int attemptNumber = 0;
       const maxRetries = 2;
 
-      while (retryCount <= maxRetries) {
+      while (attemptNumber <= maxRetries) {
+        attemptNumber++;
         try {
           proxies = await _clashManager.getProxies();
           break; // 成功则跳出循环
         } catch (e) {
-          retryCount++;
-          if (retryCount <= maxRetries) {
-            Logger.warning('获取代理数据失败（尝试 $retryCount/$maxRetries），1秒后重试：$e');
+          final errorMsg = e.toString();
+          final isLastAttempt = attemptNumber > maxRetries;
+
+          // 检查是否为 IPC 未就绪错误（启动时的正常情况）
+          final isIpcNotReady = _isIpcNotReadyError(errorMsg);
+
+          if (!isLastAttempt) {
+            // 还有重试机会
+            if (isIpcNotReady) {
+              Logger.debug('IPC 尚未就绪（第 $attemptNumber 次尝试），1秒后重试');
+            } else {
+              Logger.warning('获取代理数据失败（第 $attemptNumber 次尝试），1秒后重试：$e');
+            }
             await Future.delayed(const Duration(seconds: 1));
           } else {
-            Logger.error('获取代理数据失败，已重试 $maxRetries 次：$e');
-            rethrow;
+            // 最后一次尝试失败
+            if (isIpcNotReady) {
+              Logger.debug('IPC 仍未就绪，稍后自动重试（不显示错误）');
+              return; // 静默失败，不设置 errorMessage
+            } else {
+              Logger.error('获取代理数据失败，已尝试 $attemptNumber 次：$e');
+              rethrow; // 真正的错误才抛出
+            }
           }
         }
       }
@@ -446,7 +486,7 @@ class ClashProvider extends ChangeNotifier {
 
       apiStopwatch.stop();
       Logger.debug(
-        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，重试次数：$retryCount）',
+        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptNumber）',
       );
 
       // 【性能监控】解析节点耗时
@@ -562,21 +602,38 @@ class ClashProvider extends ChangeNotifier {
       // 从 Clash API 获取代理数据
       final apiStopwatch = Stopwatch()..start();
       Map<String, dynamic>? proxies;
-      int retryCount = 0;
+      int attemptNumber = 0;
       const maxRetries = 2;
 
-      while (retryCount <= maxRetries) {
+      while (attemptNumber <= maxRetries) {
+        attemptNumber++;
         try {
           proxies = await _clashManager.getProxies();
           break;
         } catch (e) {
-          retryCount++;
-          if (retryCount <= maxRetries) {
-            Logger.warning('获取代理数据失败（尝试 $retryCount/$maxRetries），1秒后重试：$e');
+          final errorMsg = e.toString();
+          final isLastAttempt = attemptNumber > maxRetries;
+
+          // 检查是否为 IPC 未就绪或连接失效错误
+          final isIpcNotReady = _isIpcNotReadyError(errorMsg);
+
+          if (!isLastAttempt) {
+            // 还有重试机会
+            if (isIpcNotReady) {
+              Logger.debug('IPC 连接失效（第 $attemptNumber 次尝试），1秒后重试');
+            } else {
+              Logger.warning('获取代理数据失败（第 $attemptNumber 次尝试），1秒后重试：$e');
+            }
             await Future.delayed(const Duration(seconds: 1));
           } else {
-            Logger.error('获取代理数据失败，已重试 $maxRetries 次：$e');
-            rethrow;
+            // 最后一次尝试失败
+            if (isIpcNotReady) {
+              Logger.debug('IPC 连接仍失效，稍后自动重试（不显示错误）');
+              return; // 静默失败，不设置 errorMessage
+            } else {
+              Logger.error('获取代理数据失败，已尝试 $attemptNumber 次：$e');
+              rethrow;
+            }
           }
         }
       }
@@ -587,7 +644,7 @@ class ClashProvider extends ChangeNotifier {
 
       apiStopwatch.stop();
       Logger.debug(
-        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，重试次数：$retryCount）',
+        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptNumber）',
       );
 
       // 解析节点

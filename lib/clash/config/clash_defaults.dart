@@ -19,7 +19,7 @@ class ClashDefaults {
   static const int apiReadyMaxRetries = 30; // API 就绪重试次数（总超时 6s）
   static const int apiReadyCheckTimeout = 300; // API 单次检查超时（ms）
   static const int apiReadyRetryInterval = 200; // API 重试间隔（ms）
-  static const int ipcReadyMaxRetries = 10; // IPC 就绪重试次数
+  static const int ipcReadyMaxRetries = 50; // IPC 就绪重试次数（总超时 10s）
   static const int ipcReadyRetryInterval = 200; // IPC 重试间隔（ms）
   static const int processKillTimeout = 5; // 进程停止超时（s）
   static const int subscriptionDownloadTimeout = 10; // 订阅下载超时（s）
