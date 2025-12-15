@@ -10,7 +10,6 @@ import 'package:stelliberty/clash/utils/config_parser.dart';
 import 'package:stelliberty/clash/services/config_watcher.dart';
 import 'package:stelliberty/clash/services/config_management_service.dart';
 import 'package:stelliberty/clash/services/delay_test_service.dart';
-import 'package:stelliberty/clash/utils/delay_tester.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart' as signals;
 
 // Clash 状态 Provider
@@ -231,16 +230,12 @@ class ClashProvider extends ChangeNotifier {
 
   // 检查延迟测试是否可用
   // 用于 UI 显示提示信息
-  bool get isDelayTestAvailable => DelayTester.isAvailable;
+  bool get isDelayTestAvailable => isCoreRunning;
 
   // 获取延迟测试状态描述（用于调试和用户提示）
   String getDelayTestStatus() {
     if (!isCoreRunning) {
       return 'Clash 未运行，请先启动 Clash';
-    }
-
-    if (!isDelayTestAvailable) {
-      return 'Clash API 未就绪，请稍候或重启 Clash';
     }
 
     return '延迟测试已就绪';
@@ -263,14 +258,6 @@ class ClashProvider extends ChangeNotifier {
       );
 
       if (success) {
-        // 初始化 DelayTester 的 API 客户端
-        final apiClient = _clashManager.apiClient;
-        if (apiClient != null) {
-          DelayTester.setApiClient(apiClient);
-        } else {
-          Logger.error('无法获取 Clash API 客户端，统一延迟测试不可用');
-        }
-
         // 启动后必须从 API 重新加载代理列表
         Logger.info('Clash 已启动，从 API 重新加载代理列表');
         await loadProxies();

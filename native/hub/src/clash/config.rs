@@ -6,8 +6,8 @@ pub mod generator;
 pub mod injector;
 pub mod runtime_params;
 
-use rinf::{DartSignal, RustSignal};
 use generator::GenerateRuntimeConfigRequest;
+use rinf::{DartSignal, RustSignal};
 use tokio::spawn;
 
 // 初始化配置生成消息监听器

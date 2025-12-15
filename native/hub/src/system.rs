@@ -11,13 +11,16 @@ pub mod loopback;
 pub mod url_launcher;
 
 #[allow(unused_imports)]
-pub use auto_start::{get_auto_start_status, set_auto_start_status, AutoStartStatusResult, GetAutoStartStatus, SetAutoStartStatus};
-#[allow(unused_imports)]
-pub use url_launcher::{open_url, OpenUrl, OpenUrlResult};
-#[allow(unused_imports)]
 pub use app_update::{AppUpdateResult, CheckAppUpdateRequest};
 #[allow(unused_imports)]
+pub use auto_start::{
+    AutoStartStatusResult, GetAutoStartStatus, SetAutoStartStatus, get_auto_start_status,
+    set_auto_start_status,
+};
+#[allow(unused_imports)]
 pub use backup::{BackupOperationResult, CreateBackupRequest, RestoreBackupRequest};
+#[allow(unused_imports)]
+pub use url_launcher::{OpenUrl, OpenUrlResult, open_url};
 
 // UWP 回环豁免消息（仅 Windows）
 #[cfg(target_os = "windows")]

@@ -11,17 +11,17 @@ use std::collections::HashSet;
 #[cfg(windows)]
 use std::ptr;
 #[cfg(windows)]
-use windows::core::PWSTR;
-#[cfg(windows)]
-use windows::Win32::Foundation::{LocalFree, HLOCAL};
+use windows::Win32::Foundation::{HLOCAL, LocalFree};
 #[cfg(windows)]
 use windows::Win32::NetworkManagement::WindowsFirewall::{
-    NetworkIsolationEnumAppContainers, NetworkIsolationFreeAppContainers,
-    NetworkIsolationGetAppContainerConfig, NetworkIsolationSetAppContainerConfig,
-    INET_FIREWALL_APP_CONTAINER,
+    INET_FIREWALL_APP_CONTAINER, NetworkIsolationEnumAppContainers,
+    NetworkIsolationFreeAppContainers, NetworkIsolationGetAppContainerConfig,
+    NetworkIsolationSetAppContainerConfig,
 };
 #[cfg(windows)]
 use windows::Win32::Security::{PSID, SID, SID_AND_ATTRIBUTES};
+#[cfg(windows)]
+use windows::core::PWSTR;
 
 // Dart → Rust：获取所有应用容器
 #[derive(Deserialize, DartSignal)]
@@ -85,10 +85,7 @@ impl GetAppContainers {
         match enumerate_app_containers() {
             Ok(containers) => {
                 log::info!("发送{}个容器信息到 Dart", containers.len());
-                AppContainersList {
-                    containers: vec![],
-                }
-                .send_signal_to_dart();
+                AppContainersList { containers: vec![] }.send_signal_to_dart();
 
                 for c in containers {
                     AppContainerInfo {
@@ -108,10 +105,7 @@ impl GetAppContainers {
             }
             Err(e) => {
                 log::error!("获取应用容器失败：{}", e);
-                AppContainersList {
-                    containers: vec![],
-                }
-                .send_signal_to_dart();
+                AppContainersList { containers: vec![] }.send_signal_to_dart();
                 // 即使失败也发送完成信号，避免 Dart 端无限等待
                 AppContainersComplete.send_signal_to_dart();
             }
@@ -156,10 +150,7 @@ impl SaveLoopbackConfiguration {
     //
     // 目的：批量设置多个应用的回环豁免状态
     pub fn handle(self) {
-        log::info!(
-            "处理保存配置请求，期望启用{}个容器",
-            self.sid_strings.len()
-        );
+        log::info!("处理保存配置请求，期望启用{}个容器", self.sid_strings.len());
 
         // 获取所有容器
         let containers = match enumerate_app_containers() {

@@ -9,11 +9,13 @@ pub mod interfaces;
 pub mod proxy;
 
 #[allow(unused_imports)]
-pub use interfaces::{get_hostname, get_network_addresses, GetNetworkInterfaces, NetworkInterfacesInfo};
+pub use interfaces::{
+    GetNetworkInterfaces, NetworkInterfacesInfo, get_hostname, get_network_addresses,
+};
 #[allow(unused_imports)]
 pub use proxy::{
-    disable_proxy, enable_proxy, get_proxy_info, DisableSystemProxy, EnableSystemProxy,
-    GetSystemProxy, ProxyInfo, ProxyResult, SystemProxyInfo, SystemProxyResult,
+    DisableSystemProxy, EnableSystemProxy, GetSystemProxy, ProxyInfo, ProxyResult, SystemProxyInfo,
+    SystemProxyResult, disable_proxy, enable_proxy, get_proxy_info,
 };
 
 // 初始化网络模块

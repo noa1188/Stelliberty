@@ -9,7 +9,7 @@ use tokio::spawn;
 
 pub mod config;
 pub mod core_updater;
-pub mod delay_tester;
+pub mod delay_test;
 pub mod network;
 pub mod overrides;
 pub mod process;
@@ -18,8 +18,7 @@ pub mod subscription;
 
 pub use process::{ClashProcessResult, StartClashProcess, StopClashProcess};
 pub use service::{
-    GetServiceStatus, InstallService, SendServiceHeartbeat, StartClash, StopClash,
-    UninstallService,
+    GetServiceStatus, InstallService, SendServiceHeartbeat, StartClash, StopClash, UninstallService,
 };
 
 /// 初始化 Clash 模块
@@ -158,5 +157,5 @@ pub fn init() {
     core_updater::init_message_listeners();
 
     // 启动延迟测试监听器
-    delay_tester::init_message_listeners();
+    delay_test::init_message_listeners();
 }

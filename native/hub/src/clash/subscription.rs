@@ -5,8 +5,8 @@
 pub mod downloader;
 pub mod parser;
 
-pub use parser::ProxyParser;
 pub use downloader::DownloadSubscriptionRequest;
+pub use parser::ProxyParser;
 
 use rinf::DartSignal;
 use tokio::spawn;

@@ -1,6 +1,4 @@
 // Clash 延迟测试模块
-//
-// 目的：提供批量延迟测试功能
 
 use futures_util::stream::{self, StreamExt};
 use rinf::{DartSignal, RustSignal};
@@ -10,13 +8,28 @@ use tokio::{spawn, sync::Semaphore};
 
 use crate::clash::network::internal_ipc_get;
 
+// Dart → Rust：单节点延迟测试请求
+#[derive(Deserialize, DartSignal)]
+pub struct SingleDelayTestRequest {
+    pub node_name: String,
+    pub test_url: String,
+    pub timeout_ms: u32,
+}
+
+// Rust → Dart：单节点延迟测试结果
+#[derive(Serialize, RustSignal)]
+pub struct SingleDelayTestResult {
+    pub node_name: String,
+    pub delay_ms: i32, // -1 表示失败
+}
+
 // Dart → Rust：批量延迟测试请求
 #[derive(Deserialize, DartSignal)]
 pub struct BatchDelayTestRequest {
-    pub node_names: Vec<String>, // 要测试的节点名称列表
-    pub test_url: String,         // 测试 URL
-    pub timeout_ms: u32,          // 超时时间（毫秒）
-    pub concurrency: u32,         // 并发数
+    pub node_names: Vec<String>,
+    pub test_url: String,
+    pub timeout_ms: u32,
+    pub concurrency: u32,
 }
 
 // Rust → Dart：单个节点测试完成（流式进度更新）
@@ -37,16 +50,25 @@ pub struct BatchDelayTestComplete {
 
 // 批量测试结果
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // node_name 字段供 Dart 层使用
+#[allow(dead_code)]
 pub struct BatchTestResult {
     pub node_name: String,
-    pub delay_ms: i32, // -1 表示测试失败
+    pub delay_ms: i32,
 }
 
 // 初始化延迟测试消息监听器
-//
-// 目的：建立延迟测试请求的响应通道
 pub fn init_message_listeners() {
+    // 单节点延迟测试请求监听器
+    spawn(async {
+        let receiver = SingleDelayTestRequest::get_dart_signal_receiver();
+        while let Some(dart_signal) = receiver.recv().await {
+            spawn(async move {
+                handle_single_delay_test_request(dart_signal.message).await;
+            });
+        }
+        log::info!("单节点延迟测试消息通道已关闭，退出监听器");
+    });
+
     // 批量延迟测试请求监听器
     spawn(async {
         let receiver = BatchDelayTestRequest::get_dart_signal_receiver();
@@ -57,6 +79,20 @@ pub fn init_message_listeners() {
         }
         log::info!("批量延迟测试消息通道已关闭，退出监听器");
     });
+}
+
+// 处理单节点延迟测试请求
+async fn handle_single_delay_test_request(request: SingleDelayTestRequest) {
+    log::info!("收到单节点延迟测试请求：{}", request.node_name);
+
+    let delay_ms =
+        test_single_node(&request.node_name, &request.test_url, request.timeout_ms).await;
+
+    SingleDelayTestResult {
+        node_name: request.node_name,
+        delay_ms,
+    }
+    .send_signal_to_dart();
 }
 
 // 处理批量延迟测试请求
@@ -104,11 +140,7 @@ async fn handle_batch_delay_test_request(request: BatchDelayTestRequest) {
     }
     .send_signal_to_dart();
 
-    log::info!(
-        "批量延迟测试完成，成功：{}/{}",
-        success_count,
-        total_count
-    );
+    log::info!("批量延迟测试完成，成功：{}/{}", success_count, total_count);
 }
 
 // 批量测试延迟
