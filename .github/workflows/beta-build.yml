@@ -158,24 +158,7 @@ jobs:
           cache: true
 
       - name: 配置 Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache: true
-
-      # 缓存 rinf 依赖
-      - name: 缓存 rinf 依赖
-        id: cache-rinf-deps
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.pub-cache
-            ${{ runner.os == 'Windows' && '~\AppData\Local\Pub\Cache' || '' }}
-            ~/.cargo/bin/rinf*
-            ${{ runner.os == 'Windows' && '~\.cargo\bin\rinf.exe' || '' }}
-          key: project-deps-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}-rinf-0.8.0
-          restore-keys: |
-            project-deps-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}-
-            project-deps-${{ runner.os }}-
+        uses: dtolnay/rust-toolchain@stable
 
       - name: 安装项目依赖
         shell: bash
@@ -192,14 +175,10 @@ jobs:
             flutter config --enable-macos-desktop
             echo "  ✅ macOS 桌面支持已启用"
           fi
-          if [ "${{ steps.cache-rinf-deps.outputs.cache-hit }}" != "true" ]; then
-            echo "  ➤ 安装 Flutter 主项目依赖"
-            flutter pub get
-            echo "  ➤ 安装 rinf_cli"
-            cargo install rinf_cli
-          else
-            echo "  ✅ 使用缓存的 rinf 依赖"
-          fi
+          echo "  ➤ 安装 Flutter 主项目依赖"
+          flutter pub get
+          echo "  ➤ 安装 rinf_cli"
+          cargo install rinf_cli
           echo "✅ 所有依赖安装完成"
 
       - name: 安装预构建脚本依赖
