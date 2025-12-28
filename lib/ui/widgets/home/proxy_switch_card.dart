@@ -55,11 +55,14 @@ class ProxySwitchCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                isProxyEnabled ? trans.proxy.running : trans.proxy.stopped,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isProxyEnabled ? Colors.green : Colors.grey,
-                  fontSize: 13,
+              Flexible(
+                child: Text(
+                  isProxyEnabled ? trans.proxy.running : trans.proxy.stopped,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isProxyEnabled ? Colors.green : Colors.grey,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

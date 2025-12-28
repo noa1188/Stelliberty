@@ -88,13 +88,16 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
             fontSize: 11,
           ),
         ),
-        Text(
-          _formatBytes(traffic.totalUpload),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            fontFeatures: [const FontFeature.tabularFigures()],
+        Flexible(
+          child: Text(
+            _formatBytes(traffic.totalUpload),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              fontFeatures: [const FontFeature.tabularFigures()],
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 12),
@@ -107,13 +110,16 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
             fontSize: 11,
           ),
         ),
-        Text(
-          _formatBytes(traffic.totalDownload),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.green,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            fontFeatures: [const FontFeature.tabularFigures()],
+        Flexible(
+          child: Text(
+            _formatBytes(traffic.totalDownload),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.green,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              fontFeatures: [const FontFeature.tabularFigures()],
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

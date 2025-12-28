@@ -14,6 +14,7 @@ import 'package:stelliberty/clash/services/override_service.dart';
 import 'package:stelliberty/clash/core/state_hub.dart';
 import 'package:stelliberty/clash/core/service_state.dart';
 import 'package:stelliberty/utils/logger.dart';
+import 'package:stelliberty/utils/platform_helper.dart';
 import 'package:stelliberty/utils/windows_injector.dart';
 import 'package:stelliberty/services/path_service.dart';
 import 'package:stelliberty/storage/preferences.dart';
@@ -63,8 +64,10 @@ void main(List<String> args) async {
     return;
   }
 
-  // 确保应用单实例运行
-  await ensureSingleInstance();
+  // 确保应用单实例运行（仅桌面平台）
+  if (PlatformHelper.supportsSingleInstance) {
+    await ensureSingleInstance();
+  }
 
   // 初始化 Rust 后端通信
   await initializeRust(assignRustSignal);
@@ -88,8 +91,10 @@ void main(List<String> args) async {
     appDataPath,
   );
 
-  // 设置托盘管理器
-  setupTrayManager(providers.clashProvider, providers.subscriptionProvider);
+  // 设置托盘管理器（仅桌面平台）
+  if (PlatformHelper.needsSystemTray) {
+    setupTrayManager(providers.clashProvider, providers.subscriptionProvider);
+  }
 
   // 启动时更新（不阻塞 UI 启动）
   scheduleStartupUpdate(providers.subscriptionProvider);
@@ -127,8 +132,8 @@ void main(List<String> args) async {
       child: TranslationProvider(child: const BasicLayout()),
     ),
   );
-  // 加载窗口状态
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  // 加载窗口状态（仅桌面平台）
+  if (PlatformHelper.needsWindowManagement) {
     doWhenWindowReady(() async {
       await WindowStateManager.loadAndApplyState(forceSilent: isSilentStart);
     });
@@ -208,27 +213,29 @@ Future<String> initializeOtherServices() async {
   return appDataPath;
 }
 
-// 初始化桌面窗口服务
+// 初始化桌面窗口服务（仅桌面平台）
 Future<void> initializeWindowServices() async {
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    await Window.initialize();
-    await windowManager.ensureInitialized();
-
-    if (Platform.isLinux) {
-      await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
-    } else {
-      await Window.hideWindowControls();
-    }
-
-    // 关键：阻止窗口直接关闭，拦截关闭事件以执行清理操作
-    // 这样在任务栏右键点击"关闭窗口"时不会直接杀死进程
-    await windowManager.setPreventClose(true);
-
-    // 初始化窗口监听器，拦截关闭事件
-    await AppWindowListener().initialize();
-
-    await AppTrayManager().initialize();
+  if (!PlatformHelper.needsWindowManagement) {
+    return;
   }
+
+  await Window.initialize();
+  await windowManager.ensureInitialized();
+
+  if (Platform.isLinux) {
+    await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+  } else {
+    await Window.hideWindowControls();
+  }
+
+  // 关键：阻止窗口直接关闭，拦截关闭事件以执行清理操作
+  // 这样在任务栏右键点击"关闭窗口"时不会直接杀死进程
+  await windowManager.setPreventClose(true);
+
+  // 初始化窗口监听器，拦截关闭事件
+  await AppWindowListener().initialize();
+
+  await AppTrayManager().initialize();
 }
 
 // 初始化语言设置
@@ -268,15 +275,21 @@ Future<ProviderBundle> createProviders(String appDataPath) async {
   final appUpdateProvider = AppUpdateProvider();
 
   // 并行初始化无依赖的 Providers
-  await Future.wait([
+  final initFutures = [
     themeProvider.initialize(),
     windowEffectProvider.initialize(),
     languageProvider.initialize(),
     subscriptionProvider.initialize(appDataPath),
     overrideProvider.initialize(),
-    serviceProvider.initialize(),
     appUpdateProvider.initialize(),
-  ]);
+  ];
+
+  // 服务模式仅在桌面平台可用
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    initFutures.add(serviceProvider.initialize());
+  }
+
+  await Future.wait(initFutures);
 
   // 初始化有依赖的 Providers
   final currentConfig = subscriptionProvider.getSubscriptionConfigPath();
@@ -377,15 +390,17 @@ void startClash(
   );
 }
 
-// 设置托盘管理器
+// 设置托盘管理器（仅桌面平台）
 void setupTrayManager(
   ClashProvider clashProvider,
   SubscriptionProvider subscriptionProvider,
 ) {
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    AppTrayManager().setClashProvider(clashProvider);
-    AppTrayManager().setSubscriptionProvider(subscriptionProvider);
+  if (!PlatformHelper.needsSystemTray) {
+    return;
   }
+
+  AppTrayManager().setClashProvider(clashProvider);
+  AppTrayManager().setSubscriptionProvider(subscriptionProvider);
 }
 
 // 启动时更新（不阻塞 UI 启动流程）

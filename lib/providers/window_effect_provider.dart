@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:stelliberty/storage/preferences.dart';
@@ -55,6 +56,12 @@ class WindowEffectProvider extends ChangeNotifier {
   }
 
   Future<void> _applyWindowEffect() async {
+    // 窗口效果仅在桌面平台可用，移动平台直接返回
+    if (Platform.isAndroid || Platform.isIOS) {
+      Logger.debug('移动平台不支持窗口效果，跳过设置');
+      return;
+    }
+
     final windowEffect = switch (_windowEffect) {
       AppWindowEffect.mica => WindowEffect.mica,
       AppWindowEffect.acrylic => WindowEffect.acrylic,

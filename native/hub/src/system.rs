@@ -4,6 +4,7 @@ use rinf::DartSignal;
 use tokio::spawn;
 
 pub mod app_update;
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 pub mod auto_start;
 pub mod backup;
 #[cfg(target_os = "windows")]
@@ -12,6 +13,7 @@ pub mod url_launcher;
 
 #[allow(unused_imports)]
 pub use app_update::{AppUpdateResult, CheckAppUpdateRequest};
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 #[allow(unused_imports)]
 pub use auto_start::{
     AutoStartStatusResult, GetAutoStartStatus, SetAutoStartStatus, get_auto_start_status,
@@ -32,22 +34,25 @@ pub use loopback::{
 
 // 启动消息监听器
 fn init_message_listeners() {
-    spawn(async {
-        let receiver = GetAutoStartStatus::get_dart_signal_receiver();
-        while let Some(dart_signal) = receiver.recv().await {
-            dart_signal.message.handle();
-        }
-        log::info!("获取自启动状态消息通道已关闭，退出监听器");
-    });
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+    {
+        spawn(async {
+            let receiver = GetAutoStartStatus::get_dart_signal_receiver();
+            while let Some(dart_signal) = receiver.recv().await {
+                dart_signal.message.handle();
+            }
+            log::info!("获取自启动状态消息通道已关闭，退出监听器");
+        });
 
-    // 监听设置自启动状态信号
-    spawn(async {
-        let receiver = SetAutoStartStatus::get_dart_signal_receiver();
-        while let Some(dart_signal) = receiver.recv().await {
-            dart_signal.message.handle();
-        }
-        log::info!("设置自启动状态消息通道已关闭，退出监听器");
-    });
+        // 监听设置自启动状态信号
+        spawn(async {
+            let receiver = SetAutoStartStatus::get_dart_signal_receiver();
+            while let Some(dart_signal) = receiver.recv().await {
+                dart_signal.message.handle();
+            }
+            log::info!("设置自启动状态消息通道已关闭，退出监听器");
+        });
+    }
 
     // 监听打开 URL 信号
     spawn(async {
@@ -94,7 +99,9 @@ fn init_message_listeners() {
 
 // 初始化系统模块
 pub fn init() {
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     auto_start::init();
+
     init_message_listeners();
 
     #[cfg(target_os = "windows")]

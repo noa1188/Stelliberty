@@ -1,8 +1,4 @@
-// 应用日志系统（App Log，区别于 Core Log）
-// 功能：统一格式、双输出（控制台+文件）、自动轮转（10MB）、受 Dart 端开关控制
-
 use chrono::Local;
-use env_logger;
 use log;
 use once_cell::sync::Lazy;
 use rinf::{DartSignal, RustSignal};
@@ -12,6 +8,12 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tokio::spawn;
+
+#[cfg(not(target_os = "android"))]
+use env_logger;
+
+#[cfg(target_os = "android")]
+use android_logger::{Config, FilterBuilder};
 
 // Dart → Rust：设置应用日志开关请求
 #[derive(Deserialize, DartSignal)]
@@ -49,38 +51,78 @@ static LOGGER: Lazy<()> = Lazy::new(|| {
         eprintln!("[RustLog] 应用日志文件路径: {}", log_path.display());
     }
 
-    // 日志级别：Release 不能为 "off"（否则 format 回调不执行，文件无法写入）
-    // Debug: debug，Release: info，第三方库: warn
-    let default_level = if cfg!(debug_assertions) {
-        "debug,tungstenite=warn,tokio_tungstenite=warn,reqwest=warn,hyper=warn,h2=warn"
-    } else {
-        "info,tungstenite=warn,tokio_tungstenite=warn,reqwest=warn,hyper=warn,h2=warn"
-    };
-    let env = env_logger::Env::default().default_filter_or(default_level);
+    #[cfg(target_os = "android")]
+    {
+        // Android 平台：使用 android_logger 输出到 logcat，自定义格式
+        android_logger::init_once(
+            Config::default()
+                .with_max_level(if cfg!(debug_assertions) {
+                    log::LevelFilter::Debug
+                } else {
+                    log::LevelFilter::Info
+                })
+                .with_tag("hub")
+                // 使用 FilterBuilder 过滤第三方库日志
+                .with_filter(
+                    FilterBuilder::new()
+                        .parse("debug,tungstenite=warn,tokio_tungstenite=warn,reqwest=warn,hyper=warn,h2=warn")
+                        .build()
+                )
+                // 自定义格式：添加时间戳和等级标签
+                .format(|f, record| {
+                    // 时间戳
+                    let timestamp = Local::now().format("%Y/%m/%d %H:%M:%S");
 
-    env_logger::Builder::from_env(env)
-        .format(|buf, record| {
-            let timestamp = Local::now().format("%Y/%m/%d %H:%M:%S");
-            let file = record.file().unwrap_or("unknown");
-            let path_with_dots = file.replace(['/', '\\'], ".");
+                    // 模块路径（将 :: 替换为 .）
+                    let module = record.module_path().unwrap_or("unknown");
+                    let path_with_dots = module.replace("::", ".");
 
-            // ANSI 颜色代码（用于控制台）
-            const GREEN: &str = "\x1B[32m";
-            const YELLOW: &str = "\x1B[33m";
-            const RED: &str = "\x1B[31m";
-            const CYAN: &str = "\x1B[36m";
-            const RESET: &str = "\x1B[0m";
+                    // 等级标签
+                    let level_str = match record.level() {
+                        log::Level::Error => "[RustError]",
+                        log::Level::Warn => "[RustWarn]",
+                        log::Level::Info => "[RustInfo]",
+                        log::Level::Debug => "[RustDebug]",
+                        log::Level::Trace => "[RustTrace]",
+                    };
 
-            let (level_str, color) = match record.level() {
-                log::Level::Error => ("RustError", RED),
-                log::Level::Warn => ("RustWarn", YELLOW),
-                log::Level::Info => ("RustInfo", GREEN),
-                log::Level::Debug => ("RustDebug", CYAN),
-                log::Level::Trace => ("RustTrace", CYAN),
-            };
+                    write!(f, "{} {} {} >> {}", level_str, timestamp, path_with_dots, record.args())
+                })
+        );
+    }
 
-            // 控制台输出：仅 Debug 模式
-            if cfg!(debug_assertions) {
+    #[cfg(not(target_os = "android"))]
+    {
+        // 桌面平台：使用 env_logger
+        let default_level = if cfg!(debug_assertions) {
+            "debug,tungstenite=warn,tokio_tungstenite=warn,reqwest=warn,hyper=warn,h2=warn"
+        } else {
+            "info,tungstenite=warn,tokio_tungstenite=warn,reqwest=warn,hyper=warn,h2=warn"
+        };
+        let env = env_logger::Env::default().default_filter_or(default_level);
+
+        env_logger::Builder::from_env(env)
+            .format(|buf, record| {
+                let timestamp = Local::now().format("%Y/%m/%d %H:%M:%S");
+                let file = record.file().unwrap_or("unknown");
+                let path_with_dots = file.replace(['/', '\\'], ".");
+
+                // ANSI 颜色代码（用于控制台）
+                const GREEN: &str = "\x1B[32m";
+                const YELLOW: &str = "\x1B[33m";
+                const RED: &str = "\x1B[31m";
+                const CYAN: &str = "\x1B[36m";
+                const RESET: &str = "\x1B[0m";
+
+                let (level_str, color) = match record.level() {
+                    log::Level::Error => ("RustError", RED),
+                    log::Level::Warn => ("RustWarn", YELLOW),
+                    log::Level::Info => ("RustInfo", GREEN),
+                    log::Level::Debug => ("RustDebug", CYAN),
+                    log::Level::Trace => ("RustTrace", CYAN),
+                };
+
+                // 控制台输出：所有模式（临时调试）
                 writeln!(
                     buf,
                     "{}[{}]{} {} {} >> {}",
@@ -91,29 +133,29 @@ static LOGGER: Lazy<()> = Lazy::new(|| {
                     path_with_dots,
                     record.args()
                 )?;
-            }
 
-            // 文件输出：所有模式写入
-            let file_log = if cfg!(debug_assertions) {
-                // Debug：包含文件路径（便于定位）
-                format!(
-                    "[{}] {} {} >> {}",
-                    level_str,
-                    timestamp,
-                    path_with_dots,
-                    record.args()
-                )
-            } else {
-                // Release：简洁格式（无文件路径）
-                format!("[{}] {} >> {}", level_str, timestamp, record.args())
-            };
+                // 文件输出：所有模式写入
+                let file_log = if cfg!(debug_assertions) {
+                    // Debug：包含文件路径（便于定位）
+                    format!(
+                        "[{}] {} {} >> {}",
+                        level_str,
+                        timestamp,
+                        path_with_dots,
+                        record.args()
+                    )
+                } else {
+                    // Release：简洁格式（无文件路径）
+                    format!("[{}] {} >> {}", level_str, timestamp, record.args())
+                };
 
-            // 异步写入文件（失败静默）
-            let _ = write_to_file(&file_log);
+                // 异步写入文件（失败静默）
+                let _ = write_to_file(&file_log);
 
-            Ok(())
-        })
-        .init();
+                Ok(())
+            })
+            .init();
+    }
 });
 
 // 写入日志到文件（受 Dart 端开关控制，多进程安全，失败静默）

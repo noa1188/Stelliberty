@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stelliberty/providers/content_provider.dart';
+import 'package:stelliberty/utils/platform_helper.dart';
 import 'package:stelliberty/ui/widgets/content_body.dart';
 import 'package:stelliberty/ui/pages/settings/appearance_settings_page.dart';
 import 'package:stelliberty/ui/pages/settings/language_settings_page.dart';
@@ -22,20 +23,32 @@ import 'package:stelliberty/ui/pages/connection_page.dart';
 import 'package:stelliberty/ui/pages/log_page.dart';
 
 import 'sidebar.dart';
+import 'mobile_bottom_nav.dart';
 
-// 主页面，包含固定的侧边栏和动态的内容区域
+// 主页面，根据平台选择不同布局
+// 桌面端：侧边栏 + 内容区
+// 移动端：底部导航栏 + 内容区
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        HomeSidebar(),
-        VerticalDivider(width: 2, thickness: 2),
-        Expanded(child: _DynamicContentArea()),
-      ],
-    );
+    if (PlatformHelper.isMobile) {
+      // 移动端布局：底部导航栏 + SafeArea 处理状态栏
+      return Scaffold(
+        body: SafeArea(child: const _DynamicContentArea()),
+        bottomNavigationBar: const MobileBottomNav(),
+      );
+    } else {
+      // 桌面端布局：侧边栏
+      return const Row(
+        children: [
+          HomeSidebar(),
+          VerticalDivider(width: 2, thickness: 2),
+          Expanded(child: _DynamicContentArea()),
+        ],
+      );
+    }
   }
 }
 

@@ -77,9 +77,13 @@ class BaseCard extends StatelessWidget {
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (trailing != null) trailing!,
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          Flexible(child: trailing!),
+        ],
       ],
     );
   }

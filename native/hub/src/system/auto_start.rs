@@ -8,11 +8,11 @@ use rinf::{DartSignal, RustSignal};
 use serde::{Deserialize, Serialize};
 
 // macOS/Linux 平台使用 auto-launch 库
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use auto_launch::AutoLaunchBuilder;
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use once_cell::sync::Lazy;
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::sync::Mutex;
 
 // Windows 平台使用任务计划程序
@@ -87,7 +87,7 @@ impl SetAutoStartStatus {
 }
 
 // 全局自启动配置实例（仅 macOS/Linux）
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 static AUTO_LAUNCH: Lazy<Mutex<Option<auto_launch::AutoLaunch>>> = Lazy::new(|| Mutex::new(None));
 
 // Windows 任务计划程序实现
@@ -339,7 +339,7 @@ fn is_auto_start_enabled_windows() -> Result<bool, String> {
 // macOS/Linux 实现
 
 // 初始化自启动配置（仅 macOS/Linux）
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn init_auto_launch() -> Result<(), String> {
     let mut instance = AUTO_LAUNCH
         .lock()
@@ -393,7 +393,7 @@ fn get_macos_app_path(binary_path: &std::path::Path) -> Result<String, String> {
 }
 
 // 获取缓存的可执行文件路径（Unix）
-#[cfg(not(target_os = "windows"))]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn get_cached_binary_path() -> Result<std::path::PathBuf, String> {
     use once_cell::sync::Lazy;
     static CACHED_BINARY_PATH: Lazy<Result<std::path::PathBuf, String>> = Lazy::new(|| {
@@ -411,7 +411,7 @@ pub fn get_auto_start_status() -> Result<bool, String> {
         is_auto_start_enabled_windows()
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         init_auto_launch()?;
 
@@ -425,6 +425,12 @@ pub fn get_auto_start_status() -> Result<bool, String> {
                 .map_err(|e| format!("获取自启动状态失败：{}", e)),
             None => Err("自启动模块未初始化".to_string()),
         }
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        // 移动平台 (Android/iOS) 不支持开机自启
+        Ok(false)
     }
 }
 
@@ -460,7 +466,7 @@ pub fn set_auto_start_status(enabled: bool) -> Result<bool, String> {
         Ok(status)
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         init_auto_launch()?;
 
@@ -490,6 +496,12 @@ pub fn set_auto_start_status(enabled: bool) -> Result<bool, String> {
             None => Err("自启动模块未初始化".to_string()),
         }
     }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        // 移动平台 (Android/iOS) 不支持开机自启
+        Err("移动平台不支持开机自启动功能".to_string())
+    }
 }
 
 // 模块初始化入口
@@ -502,12 +514,18 @@ pub fn init() {
         log::debug!("Auto-start module initialized (Windows Task Scheduler mode)");
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         if let Err(err) = init_auto_launch() {
             log::error!("Failed to initialize auto-start module: {}", err);
         } else {
             log::debug!("Auto-start module initialized");
         }
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        // 移动平台不支持开机自启
+        log::debug!("Auto-start module not available on mobile platforms");
     }
 }
