@@ -471,11 +471,29 @@ class SubscriptionProvider extends ChangeNotifier {
       final errorType = _classifyError(rawError);
       Logger.info('错误类型：$errorType');
 
-      // 保存错误类型的字符串表示
-      _subscriptions[index] = subscription.copyWith(
-        isUpdating: false,
-        lastError: errorType.name, // 保存枚举名称
-      );
+      // 判断是否为永久性错误（需要禁用自动更新）
+      final isPermanentError =
+          errorType == SubscriptionUpdateErrorType.notFound ||
+          errorType == SubscriptionUpdateErrorType.forbidden ||
+          errorType == SubscriptionUpdateErrorType.formatError;
+
+      if (isPermanentError) {
+        // 永久性错误：禁用自动更新（需要用户手动修复）
+        Logger.warning('检测到永久性错误，已禁用自动更新：${errorType.name}');
+        _subscriptions[index] = subscription.copyWith(
+          isUpdating: false,
+          lastError: errorType.name,
+          autoUpdateMode: AutoUpdateMode.disabled,
+        );
+      } else {
+        // 临时性错误：更新时间戳，按正常间隔重试
+        Logger.info('临时性错误，将按正常间隔重试：${errorType.name}');
+        _subscriptions[index] = subscription.copyWith(
+          isUpdating: false,
+          lastError: errorType.name,
+          lastUpdateTime: DateTime.now(),
+        );
+      }
       await _service.saveSubscriptionList(_subscriptions);
 
       return false;
