@@ -278,10 +278,7 @@ class _ClashInfoCardState extends State<ClashInfoCard> {
     Logger.info('用户点击重启核心按钮');
 
     try {
-      await clashProvider.stop();
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      await clashProvider.start();
+      await clashProvider.restart();
 
       // 显示成功提示
       if (context.mounted) {

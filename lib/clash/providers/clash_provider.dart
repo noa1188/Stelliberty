@@ -324,6 +324,62 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  // 重启 Clash 核心（保持当前配置）
+  // 自动保存当前配置路径并在重启后恢复
+  Future<bool> restart() async {
+    _errorMessage = null;
+
+    // 保存当前配置路径（必须在 stop 之前获取）
+    final currentConfigPath = _clashManager.currentConfigPath;
+
+    try {
+      // 先停止配置文件监听
+      await _stopConfigWatcher();
+
+      final stopSuccess = await _clashManager.stopCore();
+      if (!stopSuccess) {
+        _errorMessage = '停止 Clash 失败';
+        Logger.error(_errorMessage!);
+        return false;
+      }
+
+      // 等待端口完全释放
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      // 获取覆写配置
+      final overrides = _clashManager.getOverrides();
+
+      // 使用保存的配置路径重新启动
+      final success = await _clashManager.startCore(
+        configPath: currentConfigPath,
+        overrides: overrides,
+      );
+
+      if (success) {
+        Logger.info('Clash 已重启，从 API 重新加载代理列表');
+        await loadProxies();
+
+        // 获取实际使用的配置路径
+        final actualConfigPath = _clashManager.currentConfigPath;
+
+        // 如果启用了配置重载且实际使用了配置文件，启动配置文件监听
+        if (_isConfigReloadEnabled &&
+            actualConfigPath != null &&
+            actualConfigPath.isNotEmpty) {
+          await _startConfigWatcher(actualConfigPath);
+        }
+      } else {
+        Logger.error('Clash 重启失败');
+      }
+
+      return success;
+    } catch (e) {
+      _errorMessage = '重启 Clash 失败：$e';
+      Logger.error(_errorMessage!);
+      return false;
+    }
+  }
+
   // 停止 Clash 核心（不触碰系统代理）
   // 调用者需要自行决定是否禁用系统代理
   Future<bool> stop({String? configPath}) async {
