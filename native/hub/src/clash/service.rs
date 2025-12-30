@@ -61,7 +61,18 @@ impl ServiceManager {
         }
 
         // 执行 stelliberty-service version 命令
-        let output = match Command::new(&service_binary_path).arg("version").output() {
+        // Windows 平台使用 CREATE_NO_WINDOW 避免终端窗口闪屏
+        let mut cmd = Command::new(&service_binary_path);
+        cmd.arg("version");
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let output = match cmd.output() {
             Ok(output) => output,
             Err(e) => {
                 log::error!("执行私有目录服务程序 version 命令失败：{}", e);
@@ -99,7 +110,18 @@ impl ServiceManager {
         }
 
         // 执行 stelliberty-service version 命令
-        let output = match Command::new(&source_service_binary).arg("version").output() {
+        // Windows 平台使用 CREATE_NO_WINDOW 避免终端窗口闪屏
+        let mut cmd = Command::new(&source_service_binary);
+        cmd.arg("version");
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let output = match cmd.output() {
             Ok(output) => output,
             Err(e) => {
                 log::error!("执行服务程序 version 命令失败：{}", e);
