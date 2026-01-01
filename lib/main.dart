@@ -17,6 +17,7 @@ import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/utils/platform_helper.dart';
 import 'package:stelliberty/utils/windows_injector.dart';
 import 'package:stelliberty/services/path_service.dart';
+import 'package:stelliberty/services/hotkey_service.dart';
 import 'package:stelliberty/services/power_event_service.dart';
 import 'package:stelliberty/storage/preferences.dart';
 import 'package:stelliberty/clash/storage/preferences.dart';
@@ -317,6 +318,13 @@ Future<void> setupProviderDependencies(
 ) async {
   // 建立双向引用
   providers.subscriptionProvider.setClashProvider(providers.clashProvider);
+
+  // 设置 HotkeyService 的 providers 并初始化
+  HotkeyService.instance.setProviders(
+    clashProvider: providers.clashProvider,
+    subscriptionProvider: providers.subscriptionProvider,
+  );
+  await HotkeyService.instance.initialize();
 
   // 初始化电源事件服务
   PowerEventService().init();

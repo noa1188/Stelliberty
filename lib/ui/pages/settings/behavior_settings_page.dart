@@ -9,6 +9,7 @@ import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/providers/content_provider.dart';
 import 'package:stelliberty/utils/logger.dart';
 import 'package:stelliberty/ui/widgets/setting/lazy_mode_card.dart';
+import 'package:stelliberty/ui/widgets/setting/hotkey_settings_card.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
 
 // 应用行为设置页面
@@ -140,6 +141,11 @@ class _BehaviorSettingsPageState extends State<BehaviorSettingsPage> {
 
                   // 懒惰模式卡片
                   const LazyModeCard(),
+
+                  const SizedBox(height: 16),
+
+                  // 全局快捷键卡片
+                  const HotkeySettingsCard(),
                 ],
               ),
             ),
