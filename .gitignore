@@ -202,6 +202,7 @@ NOTES.txt
 notes/
 personal/
 private/
+docs/
 
 # 调试和分析文件
 *.dmp
