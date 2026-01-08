@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:stelliberty/clash/model/log_message_model.dart';
-import 'package:stelliberty/clash/services/log_service.dart';
+import 'package:stelliberty/clash/manager/manager.dart';
 import 'package:stelliberty/services/log_print_service.dart';
 
 // 日志状态管理
@@ -100,7 +100,7 @@ class LogProvider extends ChangeNotifier {
     // 使用 microtask 确保 UI 先渲染
     await Future.microtask(() {});
 
-    // LogService 不再维护历史缓存，直接标记加载完成
+    // 初始化完成，等待实时日志
     // 日志将在用户打开页面后实时接收
     Logger.info('LogProvider: 初始化完成，等待实时日志');
 
@@ -110,7 +110,7 @@ class LogProvider extends ChangeNotifier {
 
   // 订阅日志流
   void _subscribeToLogStream() {
-    _logSubscription = ClashLogService.instance.logStream.listen(
+    _logSubscription = ClashManager.instance.logStream.listen(
       (log) {
         if (!_isMonitoringPaused) {
           _pendingLogs.add(log);
@@ -188,10 +188,10 @@ class LogProvider extends ChangeNotifier {
 
   // 设置搜索关键词（带防抖）
   void setSearchKeyword(String keyword) {
-    // 取消之前的防抖定时器
+    // 取消防抖定时器
     _searchDebounceTimer?.cancel();
 
-    // 设置新的防抖定时器（300ms 后才触发过滤）
+    // 设置防抖定时器（300ms 后触发过滤）
     _searchDebounceTimer = Timer(const Duration(milliseconds: 300), () {
       _searchKeyword = keyword;
       _invalidateCache(); // 清除缓存

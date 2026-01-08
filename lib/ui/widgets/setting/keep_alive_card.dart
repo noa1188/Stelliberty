@@ -58,7 +58,7 @@ class _KeepAliveCardState extends State<KeepAliveCard> {
     try {
       final clashProvider = Provider.of<ClashProvider>(context, listen: false);
       await ClashPreferences.instance.setKeepAliveInterval(interval);
-      clashProvider.configService.setKeepAlive(_keepAliveEnabled);
+      clashProvider.setKeepAlive(_keepAliveEnabled);
 
       if (mounted) {
         ModernToast.success(trans.clash_features.keep_alive.save_success);
@@ -129,7 +129,7 @@ class _KeepAliveCardState extends State<KeepAliveCard> {
                   );
                   await ClashPreferences.instance.setKeepAliveEnabled(value);
                   if (!mounted) return;
-                  clashProvider.configService.setKeepAlive(_keepAliveEnabled);
+                  clashProvider.setKeepAlive(_keepAliveEnabled);
                 },
               ),
             ],

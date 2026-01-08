@@ -367,7 +367,7 @@ class _LogPageState extends State<LogPage> {
           addAutomaticKeepAlives: false, // 减少内存占用
           addRepaintBoundaries: true, // 优化重绘性能
           itemBuilder: (context, index) {
-            // 倒序显示日志（最新的在顶部）
+            // 倒序显示日志（最新在顶部）
             final reversedIndex = filteredLogs.length - 1 - index;
             return LogCard(log: filteredLogs[reversedIndex]);
           },

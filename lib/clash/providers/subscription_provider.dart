@@ -9,6 +9,7 @@ import 'package:stelliberty/clash/services/override_service.dart';
 import 'package:stelliberty/clash/providers/clash_provider.dart';
 import 'package:stelliberty/clash/providers/override_provider.dart';
 import 'package:stelliberty/clash/manager/manager.dart';
+import 'package:stelliberty/clash/manager/subscription_manager.dart';
 import 'package:stelliberty/services/path_service.dart';
 import 'package:stelliberty/services/log_print_service.dart';
 import 'package:stelliberty/clash/config/clash_defaults.dart';
@@ -19,8 +20,7 @@ import 'package:stelliberty/ui/widgets/modern_toast.dart';
 
 // 订阅状态管理
 class SubscriptionProvider extends ChangeNotifier {
-  final SubscriptionService _service = SubscriptionService();
-  final OverrideService _overrideService;
+  late final SubscriptionManager _manager;
 
   // 订阅状态
   SubscriptionState _state = SubscriptionState.idle();
@@ -34,12 +34,6 @@ class SubscriptionProvider extends ChangeNotifier {
 
   // 启动时更新是否已完成
   bool _isStartupUpdateDone = false;
-
-  // 获取 OverrideService
-  OverrideService get overrideService => _overrideService;
-
-  // 获取 SubscriptionService
-  SubscriptionService get service => _service;
 
   // 订阅列表
   List<Subscription> _subscriptions = [];
@@ -74,7 +68,15 @@ class SubscriptionProvider extends ChangeNotifier {
   }
 
   // 构造函数（接收共享的 OverrideService 实例）
-  SubscriptionProvider(this._overrideService);
+  SubscriptionProvider(OverrideService overrideService) {
+    final service = SubscriptionService();
+    _manager = SubscriptionManager(
+      service: service,
+      isCoreRunning: () => ClashManager.instance.isCoreRunning,
+      getMixedPort: () => ClashPreferences.instance.getMixedPort(),
+    );
+    _manager.setOverrideService(overrideService);
+  }
 
   // 更新状态并通知监听器
   void _updateState(SubscriptionState newState) {
@@ -94,7 +96,12 @@ class SubscriptionProvider extends ChangeNotifier {
   void setOverrideGetter(
     Future<List<app_override.OverrideConfig>> Function(List<String>) getter,
   ) {
-    _service.setOverrideGetter(getter);
+    _manager.setOverrideGetter(getter);
+  }
+
+  // 读取订阅配置文件
+  Future<String> readSubscriptionConfig(Subscription subscription) async {
+    return await _manager.readSubscriptionConfig(subscription);
   }
 
   // 处理当前订阅的覆写失败
@@ -126,7 +133,7 @@ class SubscriptionProvider extends ChangeNotifier {
       );
 
       // 保存到持久化存储
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
       // 通知UI更新
       notifyListeners();
@@ -189,7 +196,7 @@ class SubscriptionProvider extends ChangeNotifier {
     }
 
     if (hasChanges) {
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
       Logger.info('已清理订阅中的无效覆写引用');
     } else {
       Logger.debug('没有发现无效的覆写引用');
@@ -202,19 +209,16 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       // 初始化服务
-      await _service.initialize();
+      await _manager.initialize();
 
       // 初始化覆写服务（共享实例，已在 main.dart 初始化）
-      // await _overrideService.initialize(); // 不再需要这里初始化
-
-      // 将覆写服务注入到订阅服务
-      _service.setOverrideService(_overrideService);
+      // OverrideService 已在构造函数中设置到 Manager
 
       // 设置覆写获取回调（需要从 OverrideProvider 获取）
       // 注意：此时 OverrideProvider 可能还未初始化，所以在 main.dart 中设置
 
       // 加载订阅列表
-      _subscriptions = await _service.loadSubscriptionList();
+      _subscriptions = await _manager.loadSubscriptionList();
 
       // 尝试恢复上次选中的订阅
       final savedSubscriptionId = ClashPreferences.instance
@@ -287,7 +291,7 @@ class SubscriptionProvider extends ChangeNotifier {
       // 如果需要立即下载
       if (downloadNow) {
         Logger.info('立即下载新订阅：$name');
-        final updatedSubscription = await _service.downloadSubscription(
+        final updatedSubscription = await _manager.downloadSubscription(
           subscription.copyWith(isUpdating: true),
         );
         _subscriptions.add(updatedSubscription);
@@ -296,7 +300,7 @@ class SubscriptionProvider extends ChangeNotifier {
       }
 
       // 保存订阅列表
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
       // 如果是第一个订阅，自动选中
       if (_subscriptions.length == 1) {
@@ -422,7 +426,7 @@ class SubscriptionProvider extends ChangeNotifier {
         _state.copyWith(updatingIds: {..._state.updatingIds, subscriptionId}),
       );
 
-      // 设置更新状态，并清除之前的错误
+      // 设置更新状态并清除错误
       _subscriptions[index] = subscription.copyWith(
         isUpdating: true,
         lastError: null,
@@ -430,7 +434,7 @@ class SubscriptionProvider extends ChangeNotifier {
       notifyListeners();
 
       // 下载订阅
-      final updatedSubscription = await _service.downloadSubscription(
+      final updatedSubscription = await _manager.downloadSubscription(
         subscription,
       );
 
@@ -439,9 +443,9 @@ class SubscriptionProvider extends ChangeNotifier {
         lastError: null,
         hasConfigLoadFailed: false, // 更新成功后清除配置失败标记
       );
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
-      // 如果更新的是当前订阅，则重新加载配置
+      // 更新订阅后重新加载配置
       if (subscriptionId == _currentSubscriptionId) {
         Logger.info('当前订阅已更新，开始重新加载配置...');
         // 暂停 ConfigWatcher，避免重复触发重载
@@ -489,7 +493,7 @@ class SubscriptionProvider extends ChangeNotifier {
           lastUpdateTime: DateTime.now(),
         );
       }
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
       return false;
     } finally {
@@ -582,7 +586,7 @@ class SubscriptionProvider extends ChangeNotifier {
       '批量更新完成: 成功=${_subscriptions.length - errors.length}, 失败=${errors.length}',
     );
 
-    // 如果更新的订阅中包含当前选中的订阅，重新加载配置
+    // 批量更新包含当前订阅时重新加载配置
     if (_currentSubscriptionId != null &&
         _subscriptions.any((s) => s.id == _currentSubscriptionId)) {
       Logger.info('批量更新包含当前订阅，重新加载配置...');
@@ -763,13 +767,13 @@ class SubscriptionProvider extends ChangeNotifier {
           );
 
       // 保存配置文件内容到订阅目录
-      await _service.saveLocalSubscription(subscription, content);
+      await _manager.saveLocalSubscription(subscription, content);
 
       // 添加到订阅列表
       _subscriptions.add(subscription);
 
       // 保存订阅列表
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
       // 如果是第一个订阅，自动选中
       if (_subscriptions.length == 1) {
@@ -833,7 +837,7 @@ class SubscriptionProvider extends ChangeNotifier {
       final wasRunning = ClashManager.instance.isCoreRunning;
 
       // 删除配置文件
-      await _service.deleteSubscription(subscription);
+      await _manager.deleteSubscription(subscription);
 
       // 从列表中移除
       _subscriptions.removeWhere((s) => s.id == subscriptionId);
@@ -877,7 +881,7 @@ class SubscriptionProvider extends ChangeNotifier {
       }
 
       // 保存订阅列表
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
 
       notifyListeners();
 
@@ -902,7 +906,7 @@ class SubscriptionProvider extends ChangeNotifier {
     final subscription = _subscriptions.removeAt(oldIndex);
     _subscriptions.insert(newIndex, subscription);
 
-    await _service.saveSubscriptionList(_subscriptions);
+    await _manager.saveSubscriptionList(_subscriptions);
     notifyListeners();
 
     Logger.info('订阅排序已更新：${subscription.name} 从 $oldIndex 移动到 $newIndex');
@@ -927,7 +931,7 @@ class SubscriptionProvider extends ChangeNotifier {
     }
 
     if (hasChanges) {
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
       notifyListeners();
       Logger.info('已从订阅中移除覆写引用');
     } else {
@@ -999,7 +1003,7 @@ class SubscriptionProvider extends ChangeNotifier {
         userAgent: userAgent ?? subscription.userAgent,
       );
 
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
       notifyListeners();
 
       // 如果修改了自动更新配置，重新计算定时器
@@ -1056,7 +1060,7 @@ class SubscriptionProvider extends ChangeNotifier {
         overrideSortPreference: overrideSortPreference,
       );
 
-      await _service.saveSubscriptionList(_subscriptions);
+      await _manager.saveSubscriptionList(_subscriptions);
       notifyListeners();
 
       if (hasOverrideChanges && subscriptionId == _currentSubscriptionId) {
@@ -1088,7 +1092,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       // 保存文件到订阅目录
-      await _service.saveLocalSubscription(subscription, content);
+      await _manager.saveLocalSubscription(subscription, content);
       Logger.info('订阅文件已保存：${subscription.name}');
 
       // 清除配置失败标记（无论是否当前选中）
@@ -1097,7 +1101,7 @@ class SubscriptionProvider extends ChangeNotifier {
         _subscriptions[index] = _subscriptions[index].copyWith(
           hasConfigLoadFailed: false,
         );
-        await _service.saveSubscriptionList(_subscriptions);
+        await _manager.saveSubscriptionList(_subscriptions);
         notifyListeners();
         Logger.info('已清除订阅 ${subscription.name} 的配置失败标记');
       }
@@ -1159,7 +1163,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    Logger.info('已清除选中的订阅（之前为：$previousId），下次启动将使用默认配置');
+    Logger.info('已清除选中的订阅（ID：$previousId），下次启动将使用默认配置');
   }
 
   // 重新加载当前订阅的配置文件
@@ -1202,7 +1206,7 @@ class SubscriptionProvider extends ChangeNotifier {
         Logger.info('准备应用覆写，ID 数量：${currentSubscription!.overrideIds.length}');
         Logger.info('覆写 ID 列表：${currentSubscription!.overrideIds}');
 
-        final appOverrides = await _service.getOverridesByIds(
+        final appOverrides = await _manager.getOverridesByIds(
           currentSubscription!.overrideIds,
         );
         Logger.info('从服务获取到 ${appOverrides.length} 个覆写配置');
@@ -1238,7 +1242,7 @@ class SubscriptionProvider extends ChangeNotifier {
             _subscriptions[index] = currentSubscription!.copyWith(
               overrideIds: validIds,
             );
-            await _service.saveSubscriptionList(_subscriptions);
+            await _manager.saveSubscriptionList(_subscriptions);
             notifyListeners();
             Logger.info('已清理 ${invalidIds.length} 个无效覆写引用');
           }
@@ -1317,7 +1321,7 @@ class SubscriptionProvider extends ChangeNotifier {
             _subscriptions[index] = failedSubscription.copyWith(
               hasConfigLoadFailed: true,
             );
-            await _service.saveSubscriptionList(_subscriptions);
+            await _manager.saveSubscriptionList(_subscriptions);
             Logger.warning('订阅 $subscriptionName 配置加载失败');
           }
         }
@@ -1379,7 +1383,7 @@ class SubscriptionProvider extends ChangeNotifier {
       } else {
         Logger.info('配置重载成功 (耗时: ${reloadStopwatch.elapsedMilliseconds}ms)');
 
-        // 清除配置失败标记（如果之前失败过）
+        // 清除配置失败标记
         if (currentSubscription != null &&
             currentSubscription!.hasConfigLoadFailed) {
           final index = _subscriptions.indexWhere(
@@ -1389,7 +1393,7 @@ class SubscriptionProvider extends ChangeNotifier {
             _subscriptions[index] = currentSubscription!.copyWith(
               hasConfigLoadFailed: false,
             );
-            await _service.saveSubscriptionList(_subscriptions);
+            await _manager.saveSubscriptionList(_subscriptions);
             notifyListeners();
             Logger.info('已清除订阅 ${currentSubscription!.name} 的配置失败标记');
           }
@@ -1536,7 +1540,7 @@ class SubscriptionProvider extends ChangeNotifier {
     });
   }
 
-  // Toast 辅助方法：每次调用时获取最新的 context，确保时效性
+  // Toast 辅助方法：获取 context 并显示消息
   void _showToast(void Function(BuildContext context) show) {
     final context = ModernToast.navigatorKey.currentContext;
     if (context != null && context.mounted) {

@@ -152,7 +152,7 @@ class _ExternalControllerCardState extends State<ExternalControllerCard> {
                     value,
                   );
                   if (!mounted) return;
-                  clashProvider.configService.setExternalController(_isEnabled);
+                  clashProvider.setExternalController(_isEnabled);
                 },
               ),
             ],

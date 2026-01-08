@@ -31,6 +31,7 @@ import 'package:stelliberty/clash/providers/clash_provider.dart';
 import 'package:stelliberty/clash/providers/connection_provider.dart';
 import 'package:stelliberty/clash/providers/subscription_provider.dart';
 import 'package:stelliberty/clash/providers/core_log_provider.dart';
+import 'package:stelliberty/clash/providers/traffic_provider.dart';
 import 'package:stelliberty/clash/providers/override_provider.dart';
 import 'package:stelliberty/clash/providers/service_provider.dart';
 import 'package:stelliberty/clash/model/override_model.dart' as app_override;
@@ -75,13 +76,13 @@ void main(List<String> args) async {
   await ProviderSetup.setupDependencies(providers);
 
   // 启动 Clash 核心（不阻塞 UI）
-  ProviderSetup.startClash(providers);
+  await ProviderSetup.startClash(providers);
 
   // 设置托盘管理器（仅桌面平台）
-  ProviderSetup.setupTray(providers);
+  await ProviderSetup.setupTray(providers);
 
   // 启动时更新（不阻塞 UI 启动）
-  ProviderSetup.scheduleStartupUpdate(providers);
+  await ProviderSetup.scheduleStartupUpdate(providers);
 
   // 启动 Flutter UI
   runApp(
@@ -104,14 +105,13 @@ void main(List<String> args) async {
 // ============================================================================
 
 // 应用初始化编排
-// 负责按正确顺序初始化所有服务和组件
 class AppInitializer {
   // 主初始化流程
   static Future<void> initialize({
     required Map<String, void Function(Uint8List, Uint8List)> assignRustSignal,
     required List<String> args,
   }) async {
-    // 确保应用单实例运行（仅桌面平台）
+    // 单实例检查（仅桌面平台）
     if (PlatformHelper.supportsSingleInstance) {
       await ensureSingleInstance();
     }
@@ -122,7 +122,7 @@ class AppInitializer {
     // 初始化基础服务（路径、配置）
     await _initializeBaseServices();
 
-    // 初始化其他应用服务（日志、窗口等）
+    // 初始化应用服务（日志、窗口、DNS）
     await _initializeOtherServices();
 
     // Windows 平台：注入键盘事件修复器
@@ -134,38 +134,37 @@ class AppInitializer {
   }
 
   // 初始化基础服务（路径、配置存储）
-  // 必须最先执行，其他服务依赖这些基础服务
   static Future<void> _initializeBaseServices() async {
-    // 先初始化路径服务（其他服务依赖它）
+    // 路径服务（其他服务依赖它）
     await PathService.instance.initialize();
 
-    // 再并行初始化配置服务（它们依赖路径服务）
+    // 配置服务（依赖路径服务）
     await Future.wait([
       AppPreferences.instance.init(),
       ClashPreferences.instance.init(),
     ]);
   }
 
-  // 初始化其他应用服务（日志、窗口、托盘、DNS等）
+  // 初始化应用服务（日志、窗口、DNS）
   static Future<void> _initializeOtherServices() async {
     final appDataPath = PathService.instance.appDataPath;
 
-    // 初始化日志系统（依赖路径服务）
+    // 日志系统
     await Logger.initialize();
 
-    // 同步应用日志开关状态到 Rust 端
+    // 同步日志开关到 Rust 端
     final appLogEnabled = AppPreferences.instance.getAppLogEnabled();
     SetAppLogEnabled(isEnabled: appLogEnabled).sendSignalToRust();
     Logger.info('应用日志开关已同步到 Rust 端: $appLogEnabled');
 
-    // 并行初始化其他服务（窗口、DNS）
+    // 并行初始化窗口和 DNS 服务
     await Future.wait([
       _initializeWindowServices(),
       DnsService.instance.initialize(appDataPath),
     ]);
   }
 
-  // 初始化桌面窗口服务（仅桌面平台）
+  // 初始化窗口服务（仅桌面平台）
   static Future<void> _initializeWindowServices() async {
     if (!PlatformHelper.needsWindowManagement) {
       return;
@@ -180,13 +179,11 @@ class AppInitializer {
       await Window.hideWindowControls();
     }
 
-    // 阻止窗口直接关闭，拦截关闭事件以执行清理操作
+    // 阻止窗口直接关闭，拦截关闭事件
     await windowManager.setPreventClose(true);
 
-    // 初始化窗口监听器，拦截关闭事件
+    // 窗口监听器
     await AppWindowListener().initialize();
-
-    await AppTrayManager().initialize();
   }
 }
 
@@ -195,7 +192,6 @@ class AppInitializer {
 // ============================================================================
 
 // Provider 配置和依赖注入
-// 负责创建、初始化、注册所有 Provider
 class ProviderSetup {
   // 创建并初始化所有 Providers
   static Future<ProviderBundle> createProviders() async {
@@ -210,12 +206,9 @@ class ProviderSetup {
     }
   }
 
-  // 获取 Provider 列表（供 MultiProvider 使用）
+  // 获取 Provider 列表
   static List<SingleChildWidget> getProviderWidgets(ProviderBundle bundle) {
     return [
-      // --- Core Providers ---
-      // ClashManager 不再是 ChangeNotifier，移除 Provider
-      // 改为通过 ClashProvider.clashManager 访问
       ChangeNotifierProvider.value(value: bundle.clashProvider),
       ChangeNotifierProvider.value(value: bundle.subscriptionProvider),
       ChangeNotifierProvider.value(value: bundle.overrideProvider),
@@ -223,9 +216,8 @@ class ProviderSetup {
         create: (context) => ConnectionProvider(context.read<ClashProvider>()),
       ),
       ChangeNotifierProvider.value(value: bundle.logProvider),
-      // --- Business Logic Providers ---
-      Provider.value(value: bundle.serviceProvider),
-      // --- UI Providers ---
+      ChangeNotifierProvider.value(value: bundle.trafficProvider),
+      ChangeNotifierProvider.value(value: bundle.serviceProvider),
       ChangeNotifierProvider(create: (_) => ContentProvider()),
       ChangeNotifierProvider.value(value: bundle.themeProvider),
       ChangeNotifierProvider.value(value: bundle.languageProvider),
@@ -239,7 +231,7 @@ class ProviderSetup {
     // 建立双向引用
     providers.subscriptionProvider.setClashProvider(providers.clashProvider);
 
-    // 设置 HotkeyService 的 providers 并初始化
+    // 热键服务初始化
     HotkeyService.instance.setProviders(
       clashProvider: providers.clashProvider,
       subscriptionProvider: providers.subscriptionProvider,
@@ -254,7 +246,7 @@ class ProviderSetup {
       providers.overrideProvider,
     );
 
-    // 设置 ClashManager 的覆写获取回调
+    // 覆写获取回调
     ClashManager.instance.setOverridesGetter(() {
       final currentSub = providers.subscriptionProvider.currentSubscription;
       if (currentSub == null || currentSub.overrideIds.isEmpty) {
@@ -294,7 +286,7 @@ class ProviderSetup {
       Logger.debug('当前订阅无覆写，跳过设置覆写失败回调');
     }
 
-    // 设置默认配置启动成功回调
+    // 默认配置回退回调
     ClashManager.instance.setOnThirdLevelFallback(() async {
       Logger.warning('使用默认配置启动成功，清除失败的订阅选择');
       await providers.subscriptionProvider.clearCurrentSubscription();
@@ -302,7 +294,7 @@ class ProviderSetup {
   }
 
   // 启动 Clash 核心（不阻塞 UI）
-  static void startClash(ProviderBundle providers) {
+  static Future<void> startClash(ProviderBundle providers) async {
     final configPath = providers.subscriptionProvider
         .getSubscriptionConfigPath();
 
@@ -315,17 +307,21 @@ class ProviderSetup {
   }
 
   // 设置托盘管理器（仅桌面平台）
-  static void setupTray(ProviderBundle providers) {
+  static Future<void> setupTray(ProviderBundle providers) async {
     if (!PlatformHelper.needsSystemTray) {
       return;
     }
 
+    // 先初始化托盘
+    await AppTrayManager().initialize();
+
+    // 再设置 Providers
     AppTrayManager().setClashProvider(providers.clashProvider);
     AppTrayManager().setSubscriptionProvider(providers.subscriptionProvider);
   }
 
-  // 启动时更新（不阻塞 UI 启动流程）
-  static void scheduleStartupUpdate(ProviderBundle providers) {
+  // 启动时更新（不阻塞 UI）
+  static Future<void> scheduleStartupUpdate(ProviderBundle providers) async {
     Logger.info('触发启动时更新检查');
     unawaited(providers.subscriptionProvider.performStartupUpdate());
   }
@@ -348,6 +344,7 @@ class ProviderSetup {
     final overrideProvider = OverrideProvider(overrideService);
     final clashProvider = ClashProvider();
     final logProvider = LogProvider();
+    final trafficProvider = TrafficProvider();
     final serviceProvider = ServiceProvider();
     final appUpdateProvider = AppUpdateProvider();
 
@@ -381,6 +378,7 @@ class ProviderSetup {
       overrideProvider: overrideProvider,
       clashProvider: clashProvider,
       logProvider: logProvider,
+      trafficProvider: trafficProvider,
       serviceProvider: serviceProvider,
       appUpdateProvider: appUpdateProvider,
     );
@@ -413,6 +411,7 @@ class ProviderSetup {
       overrideProvider: OverrideProvider(overrideService),
       clashProvider: ClashProvider(),
       logProvider: LogProvider(),
+      trafficProvider: TrafficProvider(),
       serviceProvider: ServiceProvider(),
       appUpdateProvider: AppUpdateProvider(),
     );
@@ -432,6 +431,7 @@ class ProviderBundle {
   final OverrideProvider overrideProvider;
   final ClashProvider clashProvider;
   final LogProvider logProvider;
+  final TrafficProvider trafficProvider;
   final ServiceProvider serviceProvider;
   final AppUpdateProvider appUpdateProvider;
 
@@ -443,6 +443,7 @@ class ProviderBundle {
     required this.overrideProvider,
     required this.clashProvider,
     required this.logProvider,
+    required this.trafficProvider,
     required this.serviceProvider,
     required this.appUpdateProvider,
   });

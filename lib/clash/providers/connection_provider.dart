@@ -86,7 +86,7 @@ class ConnectionProvider extends ChangeNotifier {
       return;
     }
 
-    // 先停止之前的定时器（如果有）
+    // 停止定时器
     stopAutoRefresh(silent: true);
 
     // 立即刷新一次
@@ -188,7 +188,7 @@ class ConnectionProvider extends ChangeNotifier {
     }
 
     try {
-      _errorMessage = null; // 清除之前的错误
+      _errorMessage = null; // 清除错误信息
 
       final connections = await ClashManager.instance.getConnections();
 

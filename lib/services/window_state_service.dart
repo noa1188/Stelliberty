@@ -123,7 +123,7 @@ class WindowStateManager {
     }
   }
 
-  // 还原窗口到之前保存的尺寸和位置
+  // 还原窗口到保存的尺寸和位置
   static Future<void> _restoreWindow() async {
     clearCache();
     final state = _getState();
@@ -313,7 +313,6 @@ class WindowExitHandler {
     // 2. 保存窗口状态
     try {
       await WindowStateManager.saveStateOnClose();
-      Logger.info('窗口状态已保存');
     } catch (e) {
       Logger.error('保存窗口状态失败：$e');
     }
@@ -321,7 +320,6 @@ class WindowExitHandler {
     // 3. 清理窗口监听器，防止内存泄漏
     try {
       AppWindowListener().dispose();
-      Logger.info('窗口监听器已清理');
     } catch (e) {
       Logger.error('清理窗口监听器失败：$e');
     }

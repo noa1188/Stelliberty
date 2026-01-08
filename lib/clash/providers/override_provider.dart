@@ -3,13 +3,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:stelliberty/clash/state/override_states.dart';
 import 'package:stelliberty/clash/model/override_model.dart';
-import 'package:stelliberty/clash/services/override_service.dart';
+import 'package:stelliberty/clash/services/override_service.dart'; // 仍需要，用于构造函数参数类型
+import 'package:stelliberty/clash/manager/manager.dart';
+import 'package:stelliberty/clash/manager/override_manager.dart';
+import 'package:stelliberty/storage/clash_preferences.dart';
 import 'package:stelliberty/services/path_service.dart';
 import 'package:stelliberty/services/log_print_service.dart';
 
 // 全局覆写管理 Provider
 class OverrideProvider extends ChangeNotifier {
-  final OverrideService _service;
+  final OverrideManager _manager;
 
   // 覆写状态（Provider 直接管理）
   OverrideState _state = OverrideState.idle();
@@ -52,7 +55,14 @@ class OverrideProvider extends ChangeNotifier {
     return _state.isOverrideUpdating(overrideId);
   }
 
-  OverrideProvider(this._service);
+  OverrideProvider(OverrideService service)
+    : _manager = OverrideManager(
+        service: service,
+        isCoreRunning: () => ClashManager.instance.isCoreRunning,
+        getMixedPort: () => ClashPreferences.instance.getMixedPort(),
+        getDefaultUserAgent: () =>
+            ClashPreferences.instance.getDefaultUserAgent(),
+      );
 
   // 初始化 Provider
   Future<void> initialize() async {
@@ -100,7 +110,7 @@ class OverrideProvider extends ChangeNotifier {
         Logger.info('URL：${override.url}');
 
         try {
-          final content = await _service.downloadRemoteOverride(override);
+          final content = await _manager.downloadRemoteOverride(override);
           Logger.info('远程覆写下载成功，内容长度：${content.length}');
 
           // 下载成功，更新覆写配置
@@ -135,7 +145,7 @@ class OverrideProvider extends ChangeNotifier {
           // 直接使用提供的内容（可能是空字符串）
           content = override.content!;
           // 保存到覆写目录
-          await _service.saveOverrideContent(override, content);
+          await _manager.saveOverrideContent(override, content);
           Logger.info('空白覆写文件创建成功');
         } else {
           // 导入本地文件模式
@@ -150,7 +160,7 @@ class OverrideProvider extends ChangeNotifier {
 
           // 从源文件复制到覆写目录
           Logger.info('调用 saveLocalOverride 保存文件，源路径：$sourceFilePath');
-          content = await _service.saveLocalOverride(override, sourceFilePath);
+          content = await _manager.saveLocalOverride(override, sourceFilePath);
           Logger.info('本地覆写文件保存成功，内容长度：${content.length}');
         }
 
@@ -227,7 +237,7 @@ class OverrideProvider extends ChangeNotifier {
       Logger.info('开始更新远程覆写：${override.name}');
 
       // 下载远程覆写
-      final content = await _service.downloadRemoteOverride(override);
+      final content = await _manager.downloadRemoteOverride(override);
 
       // 更新覆写配置
       _overrides[index] = override.copyWith(
@@ -275,7 +285,7 @@ class OverrideProvider extends ChangeNotifier {
       await _saveOverrideList();
 
       // 删除覆写文件
-      await _service.deleteOverride(override.id, override.format);
+      await _manager.deleteOverride(override.id, override.format);
 
       // 通知订阅系统清理引用
       if (_onOverrideDeleted != null) {
@@ -350,7 +360,7 @@ class OverrideProvider extends ChangeNotifier {
       final loadedOverrides = await Future.wait(
         overrides.map((override) async {
           try {
-            final fileContent = await _service.getOverrideContent(
+            final fileContent = await _manager.getOverrideContent(
               override.id,
               override.format,
             );
@@ -450,7 +460,7 @@ class OverrideProvider extends ChangeNotifier {
         '批量更新完成: 成功=${remoteOverrides.length - errors.length}, 失败=${errors.length}',
       );
 
-      // 批量更新完成后，检查当前订阅是否使用了任何已更新的覆写
+      // 批量更新完成后，检查订阅是否使用了已更新的覆写
       if (_onOverrideContentUpdated != null) {
         final updatedOverrideIds = remoteOverrides
             .where((o) => !errors.any((err) => err.contains(o.name)))
@@ -479,7 +489,7 @@ class OverrideProvider extends ChangeNotifier {
   ) async {
     try {
       Logger.info('保存覆写文件内容：${override.name}');
-      await _service.saveOverrideContent(override, content);
+      await _manager.saveOverrideContent(override, content);
       Logger.info('覆写文件内容保存成功');
 
       // 通知订阅系统：如果当前订阅使用了这个覆写，需要重载配置

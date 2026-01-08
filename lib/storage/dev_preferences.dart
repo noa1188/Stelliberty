@@ -16,38 +16,50 @@ class DeveloperPreferences {
   Map<String, dynamic> _data = {};
   File? _file;
   bool _isInitialized = false;
+  bool _isInitializing = false; // 正在初始化标志
 
   // 检查是否为 Dev 模式
   static bool get isDevMode => kDebugMode || kProfileMode;
 
   // 初始化
   Future<void> init() async {
+    // 已经初始化过或正在初始化，跳过
+    if (_isInitialized || _isInitializing) {
+      return;
+    }
+
     if (!isDevMode) {
       Logger.warning('非 Dev 模式，不应使用 DeveloperPreferences');
       return;
     }
 
-    final dataPath = PathService.instance.appDataPath;
-    _file = File('$dataPath/shared_preferences_dev.json');
+    _isInitializing = true; // 标记开始初始化
 
-    // 读取配置文件
-    if (await _file!.exists()) {
-      try {
-        final content = await _file!.readAsString();
-        _data = json.decode(content) as Map<String, dynamic>;
-        Logger.info('Dev 模式配置已加载：${_file!.path}');
-      } catch (e) {
-        Logger.error('读取 Dev 配置失败：$e，将使用默认配置');
+    try {
+      final dataPath = PathService.instance.appDataPath;
+      _file = File('$dataPath/shared_preferences_dev.json');
+
+      // 读取配置文件
+      if (await _file!.exists()) {
+        try {
+          final content = await _file!.readAsString();
+          _data = json.decode(content) as Map<String, dynamic>;
+          Logger.info('Dev 模式配置已加载：${_file!.path}');
+        } catch (e) {
+          Logger.error('读取 Dev 配置失败：$e，将使用默认配置');
+          _data = {};
+        }
+      } else {
+        Logger.info('Dev 配置文件不存在，创建新文件：${_file!.path}');
         _data = {};
+        // 立即创建默认配置文件
+        await _save();
       }
-    } else {
-      Logger.info('Dev 配置文件不存在，创建新文件：${_file!.path}');
-      _data = {};
-      // 立即创建默认配置文件
-      await _save();
-    }
 
-    _isInitialized = true;
+      _isInitialized = true;
+    } finally {
+      _isInitializing = false; // 无论成功失败都清除初始化标志
+    }
   }
 
   // 确保已初始化

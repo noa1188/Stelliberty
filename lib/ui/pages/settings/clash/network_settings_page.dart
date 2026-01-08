@@ -107,7 +107,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                     value: _unifiedDelay,
                     onChanged: (value) {
                       setState(() => _unifiedDelay = value);
-                      clashProvider.configService.setUnifiedDelay(value);
+                      clashProvider.setUnifiedDelay(value);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -131,7 +131,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                     value: _allowLan,
                     onChanged: (value) {
                       setState(() => _allowLan = value);
-                      clashProvider.configService.setAllowLan(value);
+                      clashProvider.setAllowLan(value);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -155,7 +155,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                     value: _ipv6,
                     onChanged: (value) {
                       setState(() => _ipv6 = value);
-                      clashProvider.configService.setIpv6(value);
+                      clashProvider.setIpv6(value);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -179,7 +179,7 @@ class _NetworkSettingsPageState extends State<NetworkSettingsPage> {
                     value: _tcpConcurrent,
                     onChanged: (value) {
                       setState(() => _tcpConcurrent = value);
-                      clashProvider.configService.setTcpConcurrent(value);
+                      clashProvider.setTcpConcurrent(value);
                     },
                   ),
                 ],

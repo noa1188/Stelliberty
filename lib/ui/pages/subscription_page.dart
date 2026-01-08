@@ -438,7 +438,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     await WidgetsBinding.instance.endOfFrame;
     if (!context.mounted) return;
 
-    // 从 Provider 获取最新的订阅数据，避免使用缓存的旧对象
+    // 从 Provider 获取订阅数据
     final latestSubscription = provider.subscriptions.firstWhere(
       (s) => s.id == subscription.id,
       orElse: () => subscription, // 降级：如果找不到则使用传入的订阅
@@ -453,7 +453,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     final result = await SubscriptionDialog.showEditDialog(
       context,
-      latestSubscription, // 使用最新的订阅数据
+      latestSubscription, // 使用订阅数据
     );
 
     if (result != null && context.mounted) {
@@ -590,7 +590,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     await WidgetsBinding.instance.endOfFrame;
     if (!context.mounted) return;
 
-    // 从 Provider 获取最新的订阅数据，避免使用缓存的旧对象
+    // 从 Provider 获取订阅数据
     final latestSubscription = provider.subscriptions.firstWhere(
       (s) => s.id == subscription.id,
       orElse: () => subscription, // 降级：如果找不到则使用传入的订阅
@@ -643,7 +643,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       await WidgetsBinding.instance.endOfFrame;
       if (!context.mounted) return;
 
-      // 从 Provider 获取最新的订阅数据，保持与其他对话框一致
+      // 从 Provider 获取订阅数据
       final latestSubscription = provider.subscriptions.firstWhere(
         (s) => s.id == subscription.id,
         orElse: () => subscription,
@@ -653,9 +653,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       Logger.debug('订阅名称：${latestSubscription.name}');
 
       // 读取订阅文件内容
-      final content = await provider.service.readSubscriptionConfig(
-        latestSubscription,
-      );
+      final content = await provider.readSubscriptionConfig(latestSubscription);
       if (!context.mounted) return;
 
       await FileEditorDialog.show(
@@ -691,7 +689,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       await WidgetsBinding.instance.endOfFrame;
       if (!context.mounted) return;
 
-      // 从 Provider 获取最新的订阅数据
+      // 从 Provider 获取订阅数据
       final latestSubscription = provider.subscriptions.firstWhere(
         (s) => s.id == subscription.id,
         orElse: () => subscription,

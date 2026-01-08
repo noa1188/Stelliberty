@@ -28,7 +28,6 @@ class ClashLogService {
   ClashLogLevel get currentLogLevel => _currentLogLevel;
 
   // 开始监控日志（IPC 模式）
-  // 注意：不再需要 baseUrl 参数，IPC 通信由 Rust 处理
   Future<void> startMonitoring([String? _]) async {
     if (_isMonitoring) {
       return;
@@ -92,7 +91,7 @@ class ClashLogService {
     // 注意：
     // 1. 日志级别通过 API 的 setLogLevel() 已经热更新到核心
     // 2. WebSocket 连接保持活动，无需重启
-    // 3. 核心会自动根据新的日志级别过滤输出
+    // 3. 核心会根据日志级别过滤输出
     // 4. 只有在 silent <-> 其他级别切换时，才需要启停监控
 
     if (oldLevel == ClashLogLevel.silent && level != ClashLogLevel.silent) {

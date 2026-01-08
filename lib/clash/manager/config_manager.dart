@@ -86,7 +86,7 @@ class ConfigManager {
     String? configPath,
     List<OverrideConfig> overrides,
   ) async {
-    // 直接从持久化读取配置参数（ConfigManager 不再缓存状态）
+    // 从持久化读取配置参数
     final prefs = ClashPreferences.instance;
 
     return await ConfigInjector.injectCustomConfigParams(

@@ -139,22 +139,22 @@ class _PortSettingsCardState extends State<PortSettingsCard> {
     try {
       // 保存混合端口
       final mixedPort = int.parse(_mixedPortController.text);
-      _clashProvider.configService.setMixedPort(mixedPort);
+      _clashProvider.setMixedPort(mixedPort);
 
       // 保存 SOCKS 端口
       if (_socksPortController.text.isEmpty) {
-        _clashProvider.configService.setSocksPort(null);
+        _clashProvider.setSocksPort(null);
       } else {
         final socksPort = int.parse(_socksPortController.text);
-        _clashProvider.configService.setSocksPort(socksPort);
+        _clashProvider.setSocksPort(socksPort);
       }
 
       // 保存 HTTP 端口
       if (_httpPortController.text.isEmpty) {
-        _clashProvider.configService.setHttpPort(null);
+        _clashProvider.setHttpPort(null);
       } else {
         final httpPort = int.parse(_httpPortController.text);
-        _clashProvider.configService.setHttpPort(httpPort);
+        _clashProvider.setHttpPort(httpPort);
       }
 
       if (mounted) {

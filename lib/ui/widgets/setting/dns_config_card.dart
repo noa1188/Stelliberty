@@ -248,7 +248,7 @@ class _DnsConfigCardState extends State<DnsConfigCard> {
       await ClashPreferences.instance.setDnsOverrideEnabled(_enableDns);
 
       // 如果 Clash 正在运行，重载配置文件
-      // 注意：在 await 之前获取 context，避免跨异步使用
+      // 在 await 调用前获取 context
       if (!mounted) return;
       final clashProvider = context.read<ClashProvider>();
 

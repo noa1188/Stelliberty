@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:stelliberty/clash/network/api_client.dart';
 import 'package:stelliberty/clash/services/process_service.dart';
+import 'package:stelliberty/clash/manager/process_manager.dart';
 import 'package:stelliberty/clash/config/config_injector.dart';
 import 'package:stelliberty/clash/config/clash_defaults.dart';
 import 'package:stelliberty/clash/services/traffic_monitor.dart';
-import 'package:stelliberty/clash/services/log_service.dart';
+import 'package:stelliberty/clash/services/core_log_service.dart';
 import 'package:stelliberty/clash/services/geo_service.dart';
-import 'package:stelliberty/clash/providers/service_provider.dart';
+import 'package:stelliberty/clash/manager/service_manager.dart';
 import 'package:stelliberty/storage/clash_preferences.dart';
 import 'package:stelliberty/clash/state/core_states.dart';
 import 'package:stelliberty/atomic/permission_checker.dart';
@@ -17,6 +18,7 @@ import 'package:stelliberty/services/log_print_service.dart';
 // 负责 Clash 核心的启动、停止、重启
 class LifecycleManager {
   final ProcessService _processService;
+  late final ProcessManager _processManager;
   final ClashApiClient _apiClient;
   final TrafficMonitor _trafficMonitor;
   final ClashLogService _logService;
@@ -106,7 +108,9 @@ class LifecycleManager {
        _apiClient = apiClient,
        _trafficMonitor = trafficMonitor,
        _logService = logService,
-       _notifyListeners = notifyListeners ?? (() {});
+       _notifyListeners = notifyListeners ?? (() {}) {
+    _processManager = ProcessManager(service: _processService);
+  }
 
   // 启动 Clash 核心（不触碰系统代理）
   //
@@ -415,10 +419,10 @@ class LifecycleManager {
   // 直接使用 ServiceProvider 的缓存状态，避免重复 IPC 调用
   bool _checkServiceAvailable() {
     try {
-      // 使用 ServiceProvider 单例
-      final serviceProvider = ServiceProvider();
-      final isServiceModeInstalled = serviceProvider.isServiceModeInstalled;
-      final status = serviceProvider.status;
+      // 使用 ServiceManager 单例
+      final serviceManager = ServiceManager.instance;
+      final isServiceModeInstalled = serviceManager.isServiceModeInstalled;
+      final status = serviceManager.cachedState;
 
       Logger.debug('检查服务状态：服务模式已安装=$isServiceModeInstalled，状态=$status');
 
@@ -438,7 +442,7 @@ class LifecycleManager {
     String? originalConfigPath,
   ) async {
     try {
-      final execPath = await ProcessService.getExecutablePath();
+      final execPath = await ProcessManager.getExecutablePath();
       final clashDataDir = await GeoService.getGeoDataDir();
 
       // 发送启动命令给服务
@@ -497,7 +501,7 @@ class LifecycleManager {
     String? originalConfigPath,
   ) async {
     try {
-      final execPath = await ProcessService.getExecutablePath();
+      final execPath = await ProcessManager.getExecutablePath();
 
       final portsToCheck = <int>[ClashDefaults.apiPort, mixedPort];
       if (socksPort != null) {
@@ -514,7 +518,7 @@ class LifecycleManager {
 
       await Future.wait([
         // 任务 1: 启动进程
-        _processService.start(
+        _processManager.startProcess(
           executablePath: execPath,
           configPath: runtimeConfigPath,
           apiHost: ClashDefaults.apiHost,
@@ -551,7 +555,7 @@ class LifecycleManager {
       // 确保进程被终止（API 超时时进程可能还在运行）
       try {
         final portsToRelease = _actualPortsUsed ?? <int>[ClashDefaults.apiPort];
-        await _processService.stop(
+        await _processManager.stopProcess(
           timeout: Duration(seconds: ClashDefaults.processKillTimeout),
           portsToRelease: portsToRelease,
         );
@@ -653,10 +657,10 @@ class LifecycleManager {
         return false;
       }
 
-      // 注意：不再验证代理列表，因为：
-      // 1. 代理数据由 ClashProvider 异步加载，时序不确定
-      // 2. 配置验证的职责是确保核心能正常工作，而不是验证业务数据
-      // 3. 代理列表的验证应该由 ClashProvider 负责
+      // 仅验证核心配置，不验证代理列表
+      // 代理数据由 ClashProvider 异步加载
+      // 配置验证的职责是确保核心能正常工作
+      // 代理列表的验证由 ClashProvider 负责
 
       Logger.info('配置验证成功（核心功能验证）');
       return true;
@@ -884,7 +888,7 @@ class LifecycleManager {
       portsToRelease = <int>[ClashDefaults.apiPort];
     }
 
-    await _processService.stop(
+    await _processManager.stopProcess(
       timeout: Duration(seconds: ClashDefaults.processKillTimeout),
       portsToRelease: portsToRelease,
     );
@@ -924,8 +928,8 @@ class LifecycleManager {
   Future<bool> _checkTunPermission() async {
     try {
       // 检查服务模式是否已安装
-      final serviceProvider = ServiceProvider();
-      if (serviceProvider.isServiceModeInstalled) {
+      final serviceManager = ServiceManager.instance;
+      if (serviceManager.isServiceModeInstalled) {
         return true;
       }
 
@@ -936,5 +940,11 @@ class LifecycleManager {
       Logger.error('检查 TUN 权限失败：$e');
       return false;
     }
+  }
+
+  // 强制重置进程状态（服务安装/卸载时调用）
+  void forceResetState() {
+    _updateCoreState(CoreState.stopped);
+    _actualPortsUsed = null;
   }
 }

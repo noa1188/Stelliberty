@@ -8,7 +8,7 @@ import 'package:stelliberty/src/bindings/signals/signals.dart';
 // 更新进度回调：progress (0.0-1.0)，message (当前步骤描述)
 typedef ProgressCallback = void Function(double progress, String message);
 
-// 核心更新服务：从 GitHub 下载最新的 Mihomo 核心并替换现有核心
+// 核心更新服务：从 GitHub 下载 Mihomo 核心并替换现有核心
 class CoreUpdateService {
   // 获取当前安装的核心版本
   static Future<String?> getCurrentCoreVersion() async {

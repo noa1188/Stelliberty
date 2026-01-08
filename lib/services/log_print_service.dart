@@ -140,11 +140,11 @@ class Logger {
     // 添加到缓冲区
     _logBuffer.add('$logLine\n');
 
-    // 缓冲区超限时移除最旧日志
+    // 缓冲区超限时移除日志
     while (_logBuffer.length > _maxBufferSize) {
       _logBuffer.removeAt(0);
       if (kDebugMode) {
-        print('[DartLog] 缓冲区已满，丢弃最旧的日志');
+        print('[DartLog] 缓冲区已满，丢弃日志');
       }
     }
 

@@ -70,7 +70,7 @@ class IpcApiTest {
       }
 
       final processService = ProcessService();
-      await processService.start(
+      await processService.startProcess(
         executablePath: execPath,
         configPath: runtimeConfigPath,
         apiHost: '127.0.0.1',

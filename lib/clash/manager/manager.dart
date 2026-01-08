@@ -4,8 +4,9 @@ import 'package:stelliberty/clash/services/process_service.dart';
 import 'package:stelliberty/clash/config/clash_defaults.dart';
 import 'package:stelliberty/clash/model/connection_model.dart';
 import 'package:stelliberty/clash/model/traffic_data_model.dart';
+import 'package:stelliberty/clash/model/log_message_model.dart';
 import 'package:stelliberty/clash/services/traffic_monitor.dart';
-import 'package:stelliberty/clash/services/log_service.dart';
+import 'package:stelliberty/clash/services/core_log_service.dart';
 import 'package:stelliberty/storage/clash_preferences.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
 import 'package:stelliberty/services/log_print_service.dart';
@@ -41,21 +42,7 @@ class ClashManager {
 
   ClashApiClient? get apiClient => isCoreRunning ? _apiClient : null;
   Stream<TrafficData>? get trafficStream => _trafficMonitor.trafficStream;
-
-  // 获取当前累计流量
-  int get totalUpload => _trafficMonitor.totalUpload;
-  int get totalDownload => _trafficMonitor.totalDownload;
-
-  // 获取最后一次的流量数据（用于组件初始化，避免显示零值）
-  TrafficData? get lastTrafficData => _trafficMonitor.lastTrafficData;
-
-  // 获取波形图历史数据
-  List<double> get uploadHistory => _trafficMonitor.uploadHistory;
-  List<double> get downloadHistory => _trafficMonitor.downloadHistory;
-
-  void resetTrafficStats() {
-    _trafficMonitor.resetTotalTraffic();
-  }
+  Stream<ClashLogMessage> get logStream => _logService.logStream;
 
   bool get isCoreRunning => _lifecycleManager.isCoreRunning;
   bool get isCoreRestarting => _lifecycleManager.isCoreRestarting;
@@ -180,7 +167,7 @@ class ClashManager {
     String? configPath,
     List<OverrideConfig> overrides = const [],
   }) async {
-    // 从持久化存储读取配置参数（ConfigManager 不再缓存状态）
+    // 从持久化存储读取配置参数
     final prefs = ClashPreferences.instance;
 
     final success = await _lifecycleManager.startCore(
@@ -234,7 +221,7 @@ class ClashManager {
 
   // 强制重置进程状态（服务安装/卸载时调用）
   void forceResetProcessState() {
-    _processService.forceResetState();
+    _lifecycleManager.forceResetState();
   }
 
   // 启动服务心跳定时器（仅服务模式使用，代理方法）
@@ -289,6 +276,29 @@ class ClashManager {
 
   Future<int> testProxyDelay(String proxyName, {String? testUrl}) async {
     return await _proxyManager.testProxyDelay(proxyName, testUrl: testUrl);
+  }
+
+  // 测试单个代理节点延迟
+  Future<int> testProxyDelayViaRust(String proxyName, {String? testUrl}) async {
+    return await _proxyManager.testProxyDelayViaRust(
+      proxyName,
+      testUrl: testUrl,
+    );
+  }
+
+  // 批量测试代理节点延迟
+  Future<Map<String, int>> testGroupDelays(
+    List<String> proxyNames, {
+    String? testUrl,
+    Function(String nodeName)? onNodeStart,
+    Function(String nodeName, int delay)? onNodeComplete,
+  }) async {
+    return await _proxyManager.testGroupDelays(
+      proxyNames,
+      testUrl: testUrl,
+      onNodeStart: onNodeStart,
+      onNodeComplete: onNodeComplete,
+    );
   }
 
   Future<Map<String, dynamic>> getConfig() async {
@@ -380,10 +390,10 @@ class ClashManager {
   void _scheduleConfigReload(String reason) {
     if (!isCoreRunning || currentConfigPath == null) return;
 
-    // 取消之前的定时器
+    // 取消定时器
     _configReloadDebounceTimer?.cancel();
 
-    // 设置新的防抖定时器
+    // 设置防抖定时器
     _configReloadDebounceTimer = Timer(
       Duration(milliseconds: ClashDefaults.configReloadDebounceMs),
       () async {

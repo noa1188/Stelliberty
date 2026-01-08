@@ -184,9 +184,7 @@ class _PerformancePageState extends State<PerformancePage> {
                             selectedItem: _geodataLoader,
                             onSelected: (value) {
                               setState(() => _geodataLoader = value);
-                              clashProvider.configService.setGeodataLoader(
-                                value,
-                              );
+                              clashProvider.setGeodataLoader(value);
                             },
                             itemToString: (val) =>
                                 _getGeodataLoaderDisplayName(context, val),
@@ -264,9 +262,7 @@ class _PerformancePageState extends State<PerformancePage> {
                             selectedItem: _findProcessMode,
                             onSelected: (value) {
                               setState(() => _findProcessMode = value);
-                              clashProvider.configService.setFindProcessMode(
-                                value,
-                              );
+                              clashProvider.setFindProcessMode(value);
                             },
                             itemToString: (val) =>
                                 _getFindProcessModeDisplayName(context, val),

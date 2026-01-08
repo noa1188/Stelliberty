@@ -71,7 +71,7 @@ class HotkeyService {
 
   Future<void> registerHotkeys() async {
     try {
-      // 先注销旧的快捷键
+      // 注销快捷键
       await unregisterHotkeys();
 
       // 注册切换代理快捷键

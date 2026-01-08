@@ -93,7 +93,7 @@ class _ProxyPageWidgetState extends State<ProxyPage> {
 
     _nodeListScrollController.addListener(_updateScrollOffset);
 
-    // 在第一帧之前初始化并恢复位置
+    // 初始化并恢复位置
     _initializeWithScrollPosition();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -160,21 +160,11 @@ class _ProxyPageWidgetState extends State<ProxyPage> {
   // 初始化页面数据
   Future<void> _initializePage() async {
     final clashProvider = context.read<ClashProvider>();
-    final subscriptionProvider = context.read<SubscriptionProvider>();
 
-    // 根据 Clash 运行状态加载代理列表
+    // 仅在 Clash 运行时加载
     if (clashProvider.isCoreRunning && clashProvider.proxyGroups.isEmpty) {
       Logger.info('Clash 正在运行，加载代理列表');
       await clashProvider.loadProxies();
-    } else if (!clashProvider.isCoreRunning &&
-        clashProvider.proxyGroups.isEmpty) {
-      final configPath = subscriptionProvider.getSubscriptionConfigPath();
-      Logger.info('Clash 未运行，尝试加载订阅配置预览：$configPath');
-      if (configPath != null) {
-        await clashProvider.loadProxiesFromSubscription(configPath);
-      } else {
-        Logger.warning('没有可用的订阅配置路径');
-      }
     }
   }
 

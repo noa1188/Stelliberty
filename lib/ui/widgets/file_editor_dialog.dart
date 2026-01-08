@@ -117,7 +117,7 @@ class _FileEditorDialogState extends State<FileEditorDialog> {
 
   // 搜索框文本变化回调
   void _onSearchTextChanged() {
-    // 如果搜索框内容变化且之前有搜索结果，清空结果提示用户重新搜索
+    // 搜索框内容变化时清空结果，提示用户重新搜索
     if (_searchResultCount > 0) {
       setState(() {
         _searchResultCount = 0;

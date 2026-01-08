@@ -104,7 +104,7 @@ class _ProxyNodeGridWidgetState extends State<ProxyNodeGrid> {
           builder: (context, _) {
             return Selector<ClashProvider, _ProxyNodeGridState>(
               selector: (_, clash) {
-                // 先获取 selectedGroup 以获取最新的 now 值
+                // 获取 selectedGroup 以获取当前选中节点
                 final selectedGroup = clash.proxyGroups.firstWhere(
                   (g) => g.name == widget.selectedGroupName,
                   orElse: () => clash.proxyGroups.isNotEmpty
@@ -121,7 +121,7 @@ class _ProxyNodeGridWidgetState extends State<ProxyNodeGrid> {
                 );
               },
               builder: (context, state, child) {
-                // 从最新的 clash.proxyGroups 中获取 selectedGroup
+                // 从 clash.proxyGroups 中获取 selectedGroup
                 final clashProvider = context.read<ClashProvider>();
                 final selectedGroup = clashProvider.proxyGroups.firstWhere(
                   (g) => g.name == widget.selectedGroupName,

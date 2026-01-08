@@ -5,7 +5,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:stelliberty/services/log_print_service.dart';
 import 'package:stelliberty/tray/tray_event.dart';
 import 'package:stelliberty/clash/providers/clash_provider.dart';
-import 'package:stelliberty/clash/providers/service_provider.dart';
+import 'package:stelliberty/clash/manager/service_manager.dart';
 import 'package:stelliberty/clash/providers/subscription_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/atomic/permission_checker.dart';
@@ -34,7 +34,7 @@ class AppTrayManager {
     _clashProvider = provider;
     _eventHandler.setClashProvider(provider);
 
-    // 监听 ClashProvider 状态变化（ClashManager 不再是 ChangeNotifier）
+    // 监听 ClashProvider 状态变化
     if (!_isListeningToClashManager) {
       provider.addListener(_updateTrayMenuOnStateChange);
       _isListeningToClashManager = true;
@@ -107,7 +107,7 @@ class AppTrayManager {
 
   // Clash 状态变化时更新托盘菜单和图标
   Future<void> _updateTrayMenuOnStateChange() async {
-    // 退出时不再更新托盘图标，避免视觉干扰
+    // 退出时跳过托盘图标更新
     if (_isExiting) {
       return;
     }
@@ -210,6 +210,11 @@ class AppTrayManager {
     bool hasSubscription,
   ) async {
     try {
+      if (_clashProvider == null) {
+        Logger.debug('ClashProvider 未设置，跳过托盘菜单更新');
+        return;
+      }
+
       // 获取系统代理实际状态
       final manager = _clashProvider!.clashManager;
       final configState = _clashProvider!.configState;
@@ -300,8 +305,8 @@ class AppTrayManager {
     if (Platform.isWindows) {
       // Windows: 检查服务安装状态 或 管理员权限
       try {
-        final serviceProvider = ServiceProvider();
-        final isServiceModeInstalled = serviceProvider.isServiceModeInstalled;
+        final serviceManager = ServiceManager.instance;
+        final isServiceModeInstalled = serviceManager.isServiceModeInstalled;
 
         if (isServiceModeInstalled) {
           // 服务模式已安装，可以使用 TUN

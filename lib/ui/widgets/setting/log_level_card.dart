@@ -109,7 +109,7 @@ class _LogLevelCardState extends State<LogLevelCard> {
                   context,
                   listen: false,
                 );
-                clashProvider.configService.setClashCoreLogLevel(level.value);
+                clashProvider.setClashCoreLogLevel(level.value);
               },
               itemToString: (level) => level.getDisplayName(context),
               child: CustomDropdownButton(

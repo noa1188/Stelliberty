@@ -215,7 +215,7 @@ class _ClashInfoCardState extends State<ClashInfoCard> {
 
       Logger.info('核心文件替换成功');
 
-      // 7. 如果之前在运行，重新启动核心
+      // 7. 如果核心正在运行，重新启动
       if (wasRunning && currentConfigPath != null) {
         Logger.info('重新启动核心');
         await Future.delayed(const Duration(milliseconds: 500));

@@ -96,10 +96,10 @@ class ConfigWatcher {
       return;
     }
 
-    // 取消之前的定时器
+    // 取消定时器
     _debounceTimer?.cancel();
 
-    // 设置新的防抖定时器
+    // 设置防抖定时器
     _debounceTimer = Timer(Duration(milliseconds: debounceMs), () async {
       try {
         // 检查文件是否真的被修改（通过修改时间判断）

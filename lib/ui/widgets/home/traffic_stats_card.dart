@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stelliberty/clash/providers/clash_provider.dart';
+import 'package:stelliberty/clash/providers/traffic_provider.dart';
 import 'package:stelliberty/clash/model/traffic_data_model.dart';
 import 'package:stelliberty/ui/widgets/home/base_card.dart';
 import 'package:stelliberty/i18n/i18n.dart';
@@ -23,15 +24,12 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // 在 Widget 树构建完成后获取缓存数据，避免 initState 中使用 context 的问题
-    _trafficDataCache ??= context
-        .read<ClashProvider>()
-        .clashManager
-        .lastTrafficData;
+    _trafficDataCache ??= context.read<TrafficProvider>().lastTrafficData;
   }
 
   @override
   Widget build(BuildContext context) {
-    final manager = context.read<ClashProvider>().clashManager;
+    final trafficProvider = context.read<TrafficProvider>();
     final trans = context.translate;
 
     // 使用 select 精确监听 isRunning 状态，避免不必要的重建
@@ -47,7 +45,7 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
               final traffic =
                   snapshot.data ?? _trafficDataCache ?? TrafficData.zero;
 
-              // 缓存最新的数据（只在有新数据时更新）
+              // 缓存数据（仅在有新数据时更新）
               if (snapshot.hasData) {
                 _trafficDataCache = snapshot.data;
               }
@@ -65,11 +63,11 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
             title: trans.home.traffic_stats,
             trailing: _buildTotalTrafficDisplay(
               context,
-              manager.lastTrafficData ?? TrafficData.zero,
+              trafficProvider.lastTrafficData ?? TrafficData.zero,
             ),
             child: _buildTrafficContent(
               context,
-              manager.lastTrafficData ?? TrafficData.zero,
+              trafficProvider.lastTrafficData ?? TrafficData.zero,
               isRunning,
             ),
           );
@@ -170,8 +168,8 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
     TrafficData traffic,
     bool isRunning,
   ) {
-    // 从 ClashManager 读取全局波形图历史数据
-    final manager = context.read<ClashProvider>().clashManager;
+    // 从 TrafficProvider 读取波形图历史数据
+    final trafficProvider = context.read<TrafficProvider>();
 
     return Column(
       children: [
@@ -183,9 +181,9 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
             child: CustomPaint(
               size: const Size(double.infinity, 120),
               painter: _TrafficWavePainter(
-                // 从全局服务读取历史数据
-                uploadHistory: manager.uploadHistory,
-                downloadHistory: manager.downloadHistory,
+                // 从 TrafficProvider 读取历史数据
+                uploadHistory: trafficProvider.uploadHistory,
+                downloadHistory: trafficProvider.downloadHistory,
                 uploadColor: Theme.of(context).colorScheme.primary,
                 downloadColor: Colors.green,
               ),
@@ -270,8 +268,8 @@ class _TrafficStatsCardState extends State<TrafficStatsCard> {
 
   // 重置流量统计（无需确认对话框）
   void _resetTraffic(BuildContext context) {
-    final clashManager = context.read<ClashProvider>().clashManager;
-    clashManager.resetTrafficStats();
+    final trafficProvider = context.read<TrafficProvider>();
+    trafficProvider.resetTotalTraffic();
     // 清空本地缓存
     setState(() {
       _trafficDataCache = TrafficData.zero;

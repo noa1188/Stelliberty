@@ -45,7 +45,7 @@ class _TestUrlCardState extends State<TestUrlCard> {
 
     try {
       final clashProvider = Provider.of<ClashProvider>(context, listen: false);
-      clashProvider.configService.setTestUrl(_testUrlController.text);
+      clashProvider.setTestUrl(_testUrlController.text);
 
       if (mounted) {
         ModernToast.success(trans.clash_features.test_url.save_success);

@@ -44,7 +44,7 @@ class ModernToast {
     ToastType type = ToastType.info,
     Duration duration = const Duration(seconds: 3),
   }) {
-    // 添加到队列（不再保存 context）
+    // 添加到队列
     _queue.add(
       _ToastQueueItem(message: message, type: type, duration: duration),
     );
