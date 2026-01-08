@@ -277,7 +277,7 @@ class SubscriptionCard extends StatelessWidget {
     // 距下次更新时间（仅远程订阅+间隔更新+有更新记录时显示）
     if (!subscription.isLocalFile &&
         autoUpdateMode == AutoUpdateMode.interval &&
-        subscription.lastUpdateTime != null) {
+        subscription.lastUpdatedAt != null) {
       children.add(
         const TextSpan(
           text: ' | ',
@@ -542,7 +542,7 @@ class SubscriptionCard extends StatelessWidget {
   String _formatNextUpdate(BuildContext context) {
     final trans = context.translate;
 
-    if (subscription.lastUpdateTime == null) {
+    if (subscription.lastUpdatedAt == null) {
       return trans.subscription.pending_update;
     }
 
@@ -552,7 +552,7 @@ class SubscriptionCard extends StatelessWidget {
     // 根据更新模式计算下次更新时间
     DateTime? nextUpdateTime;
     if (subscription.autoUpdateMode == AutoUpdateMode.interval) {
-      nextUpdateTime = subscription.lastUpdateTime!.add(
+      nextUpdateTime = subscription.lastUpdatedAt!.add(
         Duration(minutes: subscription.intervalMinutes),
       );
     } else {

@@ -604,7 +604,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     final result = await OverrideSelectorDialog.show(
       context,
       initialSelectedIds: latestSubscription.overrideIds,
-      initialSortPreference: latestSubscription.overrideSortPreference,
+      initialSortPreference: latestSubscription.overrideSortPreferences,
     );
 
     if (result == null || !context.mounted) return;

@@ -32,7 +32,7 @@ class LogProvider extends ChangeNotifier {
   String? _cacheKey;
 
   // 上次刷新时间（用于动态批量更新）
-  DateTime _lastFlushTime = DateTime.now();
+  DateTime _lastFlushedAt = DateTime.now();
 
   // Getters
   List<ClashLogMessage> get logs => List.unmodifiable(_logs);
@@ -147,7 +147,7 @@ class LogProvider extends ChangeNotifier {
 
         _pendingLogs.clear();
         _invalidateCache(); // 清除缓存
-        _lastFlushTime = DateTime.now();
+        _lastFlushedAt = DateTime.now();
         notifyListeners();
       }
     });
@@ -159,7 +159,7 @@ class LogProvider extends ChangeNotifier {
   // 检查是否应该刷新待处理日志（超时强制刷新）
   bool _shouldFlushPending() {
     // 如果超过最大间隔未刷新，强制刷新保证即时性
-    return DateTime.now().difference(_lastFlushTime) > _maxBatchInterval;
+    return DateTime.now().difference(_lastFlushedAt) > _maxBatchInterval;
   }
 
   // 清空日志

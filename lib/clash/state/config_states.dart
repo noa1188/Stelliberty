@@ -23,9 +23,9 @@ class ConfigState {
   final bool isTunAutoRouteEnabled;
   final bool isTunAutoRedirectEnabled;
   final bool isTunAutoDetectInterfaceEnabled;
-  final List<String> tunDnsHijack;
+  final List<String> tunDnsHijacks;
   final bool isTunStrictRouteEnabled;
-  final List<String> tunRouteExcludeAddress;
+  final List<String> tunRouteExcludeAddresses;
   final bool isTunIcmpForwardingDisabled;
   final int tunMtu;
 
@@ -51,9 +51,9 @@ class ConfigState {
     this.isTunAutoRouteEnabled = false,
     this.isTunAutoRedirectEnabled = false,
     this.isTunAutoDetectInterfaceEnabled = false,
-    this.tunDnsHijack = const [],
+    this.tunDnsHijacks = const [],
     this.isTunStrictRouteEnabled = false,
-    this.tunRouteExcludeAddress = const [],
+    this.tunRouteExcludeAddresses = const [],
     this.isTunIcmpForwardingDisabled = false,
     this.tunMtu = ClashDefaults.defaultTunMtu,
     this.mixedPort = ClashDefaults.mixedPort,
@@ -82,9 +82,9 @@ class ConfigState {
       isTunAutoRouteEnabled: prefs.getTunAutoRoute(),
       isTunAutoRedirectEnabled: prefs.getTunAutoRedirect(),
       isTunAutoDetectInterfaceEnabled: prefs.getTunAutoDetectInterface(),
-      tunDnsHijack: prefs.getTunDnsHijack(),
+      tunDnsHijacks: prefs.getTunDnsHijack(),
       isTunStrictRouteEnabled: prefs.getTunStrictRoute(),
-      tunRouteExcludeAddress: prefs.getTunRouteExcludeAddress(),
+      tunRouteExcludeAddresses: prefs.getTunRouteExcludeAddress(),
       isTunIcmpForwardingDisabled: prefs.getTunDisableIcmpForwarding(),
       tunMtu: prefs.getTunMtu(),
       mixedPort: prefs.getMixedPort(),
@@ -110,9 +110,9 @@ class ConfigState {
     bool? isTunAutoRouteEnabled,
     bool? isTunAutoRedirectEnabled,
     bool? isTunAutoDetectInterfaceEnabled,
-    List<String>? tunDnsHijack,
+    List<String>? tunDnsHijacks,
     bool? isTunStrictRouteEnabled,
-    List<String>? tunRouteExcludeAddress,
+    List<String>? tunRouteExcludeAddresses,
     bool? isTunIcmpForwardingDisabled,
     int? tunMtu,
     int? mixedPort,
@@ -142,11 +142,11 @@ class ConfigState {
       isTunAutoDetectInterfaceEnabled:
           isTunAutoDetectInterfaceEnabled ??
           this.isTunAutoDetectInterfaceEnabled,
-      tunDnsHijack: tunDnsHijack ?? this.tunDnsHijack,
+      tunDnsHijacks: tunDnsHijacks ?? this.tunDnsHijacks,
       isTunStrictRouteEnabled:
           isTunStrictRouteEnabled ?? this.isTunStrictRouteEnabled,
-      tunRouteExcludeAddress:
-          tunRouteExcludeAddress ?? this.tunRouteExcludeAddress,
+      tunRouteExcludeAddresses:
+          tunRouteExcludeAddresses ?? this.tunRouteExcludeAddresses,
       isTunIcmpForwardingDisabled:
           isTunIcmpForwardingDisabled ?? this.isTunIcmpForwardingDisabled,
       tunMtu: tunMtu ?? this.tunMtu,

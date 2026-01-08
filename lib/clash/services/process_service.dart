@@ -11,8 +11,8 @@ import 'package:stelliberty/services/log_print_service.dart';
 // 纯技术实现：Rust FFI 调用、端口检查工具
 class ProcessService {
   // netstat 输出缓存（优化性能，避免频繁调用）
-  String? _netstatCache;
-  DateTime? _cacheTime;
+  String? _cachedNetstat;
+  DateTime? _cachedAt;
   static const _cacheDuration = Duration(milliseconds: 100);
 
   // 启动 Clash 进程（通过 Rust）
@@ -118,19 +118,19 @@ class ProcessService {
     final now = DateTime.now();
 
     // 100ms 内复用缓存
-    if (_netstatCache != null &&
-        _cacheTime != null &&
-        now.difference(_cacheTime!) < _cacheDuration) {
-      return _netstatCache!;
+    if (_cachedNetstat != null &&
+        _cachedAt != null &&
+        now.difference(_cachedAt!) < _cacheDuration) {
+      return _cachedNetstat!;
     }
 
     try {
       // 执行 netstat -ano 并缓存结果
       final result = await Process.run('netstat', ['-ano']);
       if (result.exitCode == 0) {
-        _netstatCache = result.stdout.toString();
-        _cacheTime = now;
-        return _netstatCache!;
+        _cachedNetstat = result.stdout.toString();
+        _cachedAt = now;
+        return _cachedNetstat!;
       }
     } catch (e) {
       Logger.warning('执行 netstat 失败：$e');
@@ -141,8 +141,8 @@ class ProcessService {
 
   // 清除 netstat 缓存（在进程状态改变后调用）
   void clearNetstatCache() {
-    _netstatCache = null;
-    _cacheTime = null;
+    _cachedNetstat = null;
+    _cachedAt = null;
   }
 
   // 从 netstat 输出中解析端口是否被占用

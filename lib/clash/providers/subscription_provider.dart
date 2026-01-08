@@ -35,6 +35,9 @@ class SubscriptionProvider extends ChangeNotifier {
   // 启动时更新是否已完成
   bool _isStartupUpdateDone = false;
 
+  // 自动更新并发保护标记
+  bool _isAutoUpdateInProgress = false;
+
   // 订阅列表
   List<Subscription> _subscriptions = [];
   List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
@@ -490,7 +493,7 @@ class SubscriptionProvider extends ChangeNotifier {
         _subscriptions[index] = subscription.copyWith(
           isUpdating: false,
           lastError: errorType.name,
-          lastUpdateTime: DateTime.now(),
+          lastUpdatedAt: DateTime.now(),
         );
       }
       await _manager.saveSubscriptionList(_subscriptions);
@@ -637,39 +640,52 @@ class SubscriptionProvider extends ChangeNotifier {
 
   // 检查并执行自动更新
   void _checkAndAutoUpdate() async {
+    // 防止并发执行
+    if (_isAutoUpdateInProgress) {
+      Logger.debug('自动更新正在处理中，跳过本次检查');
+      return;
+    }
+
     // 防止重复执行
     if (_state.operationState.isAutoUpdating) {
       Logger.debug('自动更新正在执行中，跳过本次检查');
       return;
     }
 
-    // 过滤出需要更新的订阅
-    final needUpdateSubscriptions = _subscriptions
-        .where((s) => s.needsUpdate)
-        .toList();
-
-    if (needUpdateSubscriptions.isEmpty) {
-      Logger.debug('定时检查：没有订阅需要更新');
-      return;
-    }
-
-    Logger.info('定时检查：发现 ${needUpdateSubscriptions.length} 个订阅需要更新');
-
-    _updateState(
-      _state.copyWith(operationState: SubscriptionOperationState.autoUpdating),
-    );
+    _isAutoUpdateInProgress = true;
     try {
-      await autoUpdateSubscriptions();
-    } catch (e) {
-      Logger.error('自动更新订阅失败：$e');
+      // 过滤出需要更新的订阅
+      final needUpdateSubscriptions = _subscriptions
+          .where((s) => s.shouldUpdate)
+          .toList();
+
+      if (needUpdateSubscriptions.isEmpty) {
+        Logger.debug('定时检查：没有订阅需要更新');
+        return;
+      }
+
+      Logger.info('定时检查：发现 ${needUpdateSubscriptions.length} 个订阅需要更新');
+
       _updateState(
         _state.copyWith(
-          errorState: SubscriptionErrorState.unknown,
-          errorMessage: '自动更新失败: $e',
+          operationState: SubscriptionOperationState.autoUpdating,
         ),
       );
+      try {
+        await autoUpdateSubscriptions();
+      } catch (e) {
+        Logger.error('自动更新订阅失败：$e');
+        _updateState(
+          _state.copyWith(
+            errorState: SubscriptionErrorState.unknown,
+            errorMessage: '自动更新失败: $e',
+          ),
+        );
+      } finally {
+        _updateState(SubscriptionState.idle());
+      }
     } finally {
-      _updateState(SubscriptionState.idle());
+      _isAutoUpdateInProgress = false;
     }
   }
 
@@ -680,7 +696,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
     // 过滤出需要更新的订阅
     final needUpdateSubscriptions = _subscriptions
-        .where((s) => s.needsUpdate)
+        .where((s) => s.shouldUpdate)
         .toList();
 
     if (needUpdateSubscriptions.isEmpty) {
@@ -1026,7 +1042,7 @@ class SubscriptionProvider extends ChangeNotifier {
   Future<bool> updateSubscriptionOverrides(
     String subscriptionId,
     List<String> overrideIds,
-    List<String> overrideSortPreference,
+    List<String> overrideSortPreferences,
   ) async {
     final subscriptionIndex = _subscriptions.indexWhere(
       (s) => s.id == subscriptionId,
@@ -1057,7 +1073,7 @@ class SubscriptionProvider extends ChangeNotifier {
 
       _subscriptions[subscriptionIndex] = subscription.copyWith(
         overrideIds: overrideIds,
-        overrideSortPreference: overrideSortPreference,
+        overrideSortPreferences: overrideSortPreferences,
       );
 
       await _manager.saveSubscriptionList(_subscriptions);

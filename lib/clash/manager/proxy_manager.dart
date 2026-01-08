@@ -31,14 +31,14 @@ class ProxyManager {
       throw Exception('Clash 未在运行');
     }
 
-    final success = await _apiClient.changeProxy(groupName, proxyName);
+    final wasSuccessful = await _apiClient.changeProxy(groupName, proxyName);
 
     // 切换节点后关闭所有现有连接，确保立即生效
-    if (success) {
+    if (wasSuccessful) {
       await _apiClient.closeAllConnections();
     }
 
-    return success;
+    return wasSuccessful;
   }
 
   // 测试代理延迟（HTTP API 方式）

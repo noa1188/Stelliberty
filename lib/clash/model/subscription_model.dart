@@ -125,14 +125,14 @@ class Subscription {
   final AutoUpdateMode autoUpdateMode; // 自动更新模式
   final int intervalMinutes; // 间隔更新时长（分钟，仅当模式为 interval 时有效）
   final bool shouldUpdateOnStartup; // 启动时更新（禁用自动更新时可选）
-  final DateTime? lastUpdateTime; // 上次更新时间
+  final DateTime? lastUpdatedAt; // 上次更新时间
   final SubscriptionInfo? info; // 订阅信息
   final bool isUpdating; // 是否正在更新
   final bool isLocalFile; // 是否为本地文件
   final SubscriptionProxyMode proxyMode; // 订阅更新代理模式
   final String? lastError; // 最后一次更新错误信息
   final List<String> overrideIds; // 规则覆写ID列表（已选中的）
-  final List<String> overrideSortPreference; // 规则覆写排序偏好（完整顺序，包括未选中的）
+  final List<String> overrideSortPreferences; // 规则覆写排序偏好（完整顺序，包括未选中的）
   final List<String> failedOverrideIds; // 失败的覆写ID列表(启动失败时记录)
   final String userAgent; // User-Agent（仅远程订阅有效，默认为 clash.meta）
   final bool hasConfigLoadFailed; // 配置加载失败标记（用于 UI 显示警告）
@@ -144,14 +144,14 @@ class Subscription {
     this.autoUpdateMode = AutoUpdateMode.disabled,
     this.intervalMinutes = 60,
     this.shouldUpdateOnStartup = false,
-    this.lastUpdateTime,
+    this.lastUpdatedAt,
     this.info,
     this.isUpdating = false,
     this.isLocalFile = false,
     this.proxyMode = SubscriptionProxyMode.direct,
     this.lastError,
     this.overrideIds = const [],
-    this.overrideSortPreference = const [],
+    this.overrideSortPreferences = const [],
     this.failedOverrideIds = const [],
     this.userAgent = ClashDefaults.defaultUserAgent,
     this.hasConfigLoadFailed = false,
@@ -167,20 +167,20 @@ class Subscription {
   }
 
   // 是否需要自动更新
-  bool get needsUpdate {
+  bool get shouldUpdate {
     // 如果未启用自动更新，则不需要更新
     if (autoUpdateMode == AutoUpdateMode.disabled) {
       return false;
     }
 
     // 如果从未更新过，需要更新
-    if (lastUpdateTime == null) {
+    if (lastUpdatedAt == null) {
       return true;
     }
 
     // 间隔更新模式
     if (autoUpdateMode == AutoUpdateMode.interval) {
-      final nextUpdateTime = lastUpdateTime!.add(
+      final nextUpdateTime = lastUpdatedAt!.add(
         Duration(minutes: intervalMinutes),
       );
       return DateTime.now().isAfter(nextUpdateTime);
@@ -204,14 +204,14 @@ class Subscription {
     AutoUpdateMode? autoUpdateMode,
     int? intervalMinutes,
     bool? shouldUpdateOnStartup,
-    DateTime? lastUpdateTime,
+    DateTime? lastUpdatedAt,
     SubscriptionInfo? info,
     bool? isUpdating,
     bool? isLocalFile,
     SubscriptionProxyMode? proxyMode,
     String? lastError,
     List<String>? overrideIds,
-    List<String>? overrideSortPreference,
+    List<String>? overrideSortPreferences,
     List<String>? failedOverrideIds,
     String? userAgent,
     bool? hasConfigLoadFailed,
@@ -224,15 +224,15 @@ class Subscription {
       intervalMinutes: intervalMinutes ?? this.intervalMinutes,
       shouldUpdateOnStartup:
           shouldUpdateOnStartup ?? this.shouldUpdateOnStartup,
-      lastUpdateTime: lastUpdateTime ?? this.lastUpdateTime,
+      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
       info: info ?? this.info,
       isUpdating: isUpdating ?? this.isUpdating,
       isLocalFile: isLocalFile ?? this.isLocalFile,
       proxyMode: proxyMode ?? this.proxyMode,
       lastError: lastError,
       overrideIds: overrideIds ?? this.overrideIds,
-      overrideSortPreference:
-          overrideSortPreference ?? this.overrideSortPreference,
+      overrideSortPreferences:
+          overrideSortPreferences ?? this.overrideSortPreferences,
       failedOverrideIds: failedOverrideIds ?? this.failedOverrideIds,
       userAgent: userAgent ?? this.userAgent,
       hasConfigLoadFailed: hasConfigLoadFailed ?? this.hasConfigLoadFailed,
@@ -246,13 +246,13 @@ class Subscription {
     'autoUpdateMode': autoUpdateMode.value,
     'intervalMinutes': intervalMinutes,
     'shouldUpdateOnStartup': shouldUpdateOnStartup,
-    'lastUpdateTime': lastUpdateTime?.toIso8601String(),
+    'lastUpdatedAt': lastUpdatedAt?.toIso8601String(),
     'info': info?.toJson(),
     'isLocalFile': isLocalFile,
     'proxyMode': proxyMode.value,
     'lastError': lastError,
     'overrideIds': overrideIds,
-    'overrideSortPreference': overrideSortPreference,
+    'overrideSortPreferences': overrideSortPreferences,
     'failedOverrideIds': failedOverrideIds,
     'userAgent': userAgent,
     'hasConfigLoadFailed': hasConfigLoadFailed,
@@ -268,8 +268,8 @@ class Subscription {
       ),
       intervalMinutes: json['intervalMinutes'] as int? ?? 60,
       shouldUpdateOnStartup: json['shouldUpdateOnStartup'] as bool? ?? false,
-      lastUpdateTime: json['lastUpdateTime'] != null
-          ? DateTime.parse(json['lastUpdateTime'] as String)
+      lastUpdatedAt: json['lastUpdatedAt'] != null
+          ? DateTime.parse(json['lastUpdatedAt'] as String)
           : null,
       info: json['info'] != null
           ? SubscriptionInfo.fromJson(json['info'] as Map<String, dynamic>)
@@ -282,8 +282,8 @@ class Subscription {
       overrideIds: json['overrideIds'] != null
           ? List<String>.from(json['overrideIds'] as List)
           : const [],
-      overrideSortPreference: json['overrideSortPreference'] != null
-          ? List<String>.from(json['overrideSortPreference'] as List)
+      overrideSortPreferences: json['overrideSortPreferences'] != null
+          ? List<String>.from(json['overrideSortPreferences'] as List)
           : const [],
       failedOverrideIds: json['failedOverrideIds'] != null
           ? List<String>.from(json['failedOverrideIds'] as List)

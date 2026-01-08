@@ -12,7 +12,7 @@ class ClashApiClient {
 
   // getConfig() 缓存机制（优化并发请求）
   Map<String, dynamic>? _configCache;
-  DateTime? _cacheTime;
+  DateTime? _cachedAt;
   Future<Map<String, dynamic>>? _pendingRequest;
   static const _cacheDuration = Duration(seconds: 1);
 
@@ -177,7 +177,7 @@ class ClashApiClient {
   // 清除 getConfig() 缓存（在配置修改后调用）
   void _clearConfigCache() {
     _configCache = null;
-    _cacheTime = null;
+    _cachedAt = null;
   }
 
   // 实际执行 HTTP 请求获取配置（内部方法）
@@ -197,8 +197,8 @@ class ClashApiClient {
 
     // 1. 短期缓存（1秒内复用，避免频繁请求）
     if (_configCache != null &&
-        _cacheTime != null &&
-        now.difference(_cacheTime!) < _cacheDuration) {
+        _cachedAt != null &&
+        now.difference(_cachedAt!) < _cacheDuration) {
       return _configCache!;
     }
 
@@ -212,7 +212,7 @@ class ClashApiClient {
     try {
       final result = await _pendingRequest!;
       _configCache = result;
-      _cacheTime = now;
+      _cachedAt = now;
       return result;
     } finally {
       _pendingRequest = null;

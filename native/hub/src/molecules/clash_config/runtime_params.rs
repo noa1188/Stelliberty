@@ -22,9 +22,9 @@ pub struct RuntimeConfigParams {
     pub is_tun_auto_route_enabled: bool,
     pub is_tun_auto_redirect_enabled: bool,
     pub is_tun_auto_detect_interface_enabled: bool,
-    pub tun_dns_hijack: Vec<String>,
+    pub tun_dns_hijacks: Vec<String>,
     pub is_tun_strict_route_enabled: bool,
-    pub tun_route_exclude_address: Vec<String>,
+    pub tun_route_exclude_addresses: Vec<String>,
     pub is_tun_icmp_forwarding_disabled: bool,
     pub tun_mtu: i32,
 

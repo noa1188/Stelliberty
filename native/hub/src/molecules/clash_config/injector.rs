@@ -161,7 +161,7 @@ pub fn inject_runtime_params(
     );
 
     let dns_hijack: Vec<YamlValue> = params
-        .tun_dns_hijack
+        .tun_dns_hijacks
         .iter()
         .map(|s| YamlValue::String(s.clone()))
         .collect();
@@ -174,9 +174,9 @@ pub fn inject_runtime_params(
         YamlValue::Bool(params.is_tun_strict_route_enabled),
     );
 
-    if !params.tun_route_exclude_address.is_empty() {
+    if !params.tun_route_exclude_addresses.is_empty() {
         let route_exclude: Vec<YamlValue> = params
-            .tun_route_exclude_address
+            .tun_route_exclude_addresses
             .iter()
             .map(|s| YamlValue::String(s.clone()))
             .collect();

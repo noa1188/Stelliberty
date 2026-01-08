@@ -17,8 +17,8 @@ class SystemProxyManager {
     _onSystemProxyStateChanged = callback;
   }
 
-  bool _systemProxyEnabled = false;
-  bool get isSystemProxyEnabled => _systemProxyEnabled;
+  bool _isSystemProxyEnabled = false;
+  bool get isSystemProxyEnabled => _isSystemProxyEnabled;
 
   // 标记当前实例是否真正启用过系统代理（用于多实例场景）
   bool _hasEnabledSystemProxy = false;
@@ -41,7 +41,7 @@ class SystemProxyManager {
     try {
       final prefs = ClashPreferences.instance;
       final proxyHost = prefs.getProxyHost();
-      final usePacMode = prefs.getSystemProxyPacMode();
+      final shouldUsePacMode = prefs.getSystemProxyPacMode();
       final bypassRules = prefs.getCurrentBypassRules();
       final bypasses = SystemProxy.parseBypassRules(bypassRules);
       final pacScript = prefs.getSystemProxyPacScript();
@@ -52,12 +52,12 @@ class SystemProxyManager {
         host: proxyHost,
         port: _getHttpPort(),
         bypassDomains: bypasses,
-        usePacMode: usePacMode,
+        usePacMode: shouldUsePacMode,
         pacScript: pacScript,
       );
 
       _hasEnabledSystemProxy = true;
-      if (usePacMode) {
+      if (shouldUsePacMode) {
         Logger.info('系统代理已更新 (PAC 模式)');
       } else {
         Logger.info('系统代理已更新：$proxyHost:${_getHttpPort()}');
@@ -77,7 +77,7 @@ class SystemProxyManager {
     try {
       final prefs = ClashPreferences.instance;
       final proxyHost = prefs.getProxyHost();
-      final usePacMode = prefs.getSystemProxyPacMode();
+      final shouldUsePacMode = prefs.getSystemProxyPacMode();
       final bypassRules = prefs.getCurrentBypassRules();
       final bypasses = SystemProxy.parseBypassRules(bypassRules);
       final pacScript = prefs.getSystemProxyPacScript();
@@ -86,11 +86,11 @@ class SystemProxyManager {
         host: proxyHost,
         port: _getHttpPort(),
         bypassDomains: bypasses,
-        usePacMode: usePacMode,
+        usePacMode: shouldUsePacMode,
         pacScript: pacScript,
       );
 
-      _systemProxyEnabled = true;
+      _isSystemProxyEnabled = true;
       _hasEnabledSystemProxy = true;
       _onSystemProxyStateChanged?.call(true);
       _notifyListeners();
@@ -106,8 +106,8 @@ class SystemProxyManager {
     // 如果当前实例从未启用过系统代理，跳过禁用操作（多实例场景保护）
     if (!_hasEnabledSystemProxy) {
       Logger.debug('当前实例未启用过系统代理，跳过禁用操作');
-      if (_systemProxyEnabled) {
-        _systemProxyEnabled = false;
+      if (_isSystemProxyEnabled) {
+        _isSystemProxyEnabled = false;
         _onSystemProxyStateChanged?.call(false);
         _notifyListeners();
       }
@@ -116,7 +116,7 @@ class SystemProxyManager {
 
     try {
       await SystemProxy.disable();
-      _systemProxyEnabled = false;
+      _isSystemProxyEnabled = false;
       _hasEnabledSystemProxy = false;
       _onSystemProxyStateChanged?.call(false);
       _notifyListeners();

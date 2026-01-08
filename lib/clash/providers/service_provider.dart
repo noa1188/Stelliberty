@@ -13,14 +13,14 @@ class ServiceProvider extends ChangeNotifier {
 
   // 最后的操作结果
   String? _lastOperationError;
-  bool? _lastOperationSuccess;
+  bool? _wasLastOperationSuccessful;
 
   ServiceState get status => _serviceState;
   bool get isServiceModeInstalled => _serviceState.isServiceModeInstalled;
   bool get isServiceModeRunning => _serviceState.isServiceModeRunning;
   bool get isServiceModeProcessing => _serviceState.isServiceModeProcessing;
   String? get lastOperationError => _lastOperationError;
-  bool? get lastOperationSuccess => _lastOperationSuccess;
+  bool? get wasLastOperationSuccessful => _wasLastOperationSuccessful;
 
   // 更新服务状态
   void _updateServiceState(ServiceState newState) {
@@ -35,7 +35,7 @@ class ServiceProvider extends ChangeNotifier {
   // 清除最后的操作结果
   void clearLastOperationResult() {
     _lastOperationError = null;
-    _lastOperationSuccess = null;
+    _wasLastOperationSuccessful = null;
     notifyListeners();
   }
 
@@ -55,12 +55,12 @@ class ServiceProvider extends ChangeNotifier {
     if (isServiceModeProcessing) return false;
 
     _updateServiceState(ServiceState.installing);
-    _lastOperationSuccess = null;
+    _wasLastOperationSuccessful = null;
     _lastOperationError = null;
 
     final (success, error) = await _manager.installService();
 
-    _lastOperationSuccess = success;
+    _wasLastOperationSuccessful = success;
     _lastOperationError = error;
 
     // 刷新状态
@@ -74,12 +74,12 @@ class ServiceProvider extends ChangeNotifier {
     if (isServiceModeProcessing) return false;
 
     _updateServiceState(ServiceState.uninstalling);
-    _lastOperationSuccess = null;
+    _wasLastOperationSuccessful = null;
     _lastOperationError = null;
 
     final (success, error) = await _manager.uninstallService();
 
-    _lastOperationSuccess = success;
+    _wasLastOperationSuccessful = success;
     _lastOperationError = error;
 
     if (success) {

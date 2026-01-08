@@ -65,9 +65,9 @@ class ProcessManager {
     final portStatus = await _service.checkMultiplePorts(ports);
 
     for (final port in ports) {
-      final inUse = portStatus[port] ?? false;
+      final isInUse = portStatus[port] ?? false;
 
-      if (!inUse) {
+      if (!isInUse) {
         Logger.debug('端口 $port 可用');
         continue;
       }
@@ -84,8 +84,8 @@ class ProcessManager {
         );
 
         // 检查是否成功释放
-        final stillInUse = await _service.isPortInUse(port);
-        if (!stillInUse) {
+        final isStillInUse = await _service.isPortInUse(port);
+        if (!isStillInUse) {
           Logger.info('端口 $port 已成功释放');
           break;
         }
@@ -149,8 +149,8 @@ class ProcessManager {
               if (error.contains('Access is denied') ||
                   error.contains('拒绝访问')) {
                 Logger.info('检测到权限不足，尝试通过服务模式停止核心…');
-                final stopped = await _service.tryStopViaService();
-                if (stopped) {
+                final wasStopped = await _service.tryStopViaService();
+                if (wasStopped) {
                   Logger.info('已通过服务模式停止核心');
                   _service.clearNetstatCache();
                   await _service.waitForPortRelease(

@@ -169,7 +169,7 @@ class SubscriptionService {
 
         // 返回更新后的订阅
         return subscription.copyWith(
-          lastUpdateTime: DateTime.now(),
+          lastUpdatedAt: DateTime.now(),
           info: info,
           isUpdating: false,
         );

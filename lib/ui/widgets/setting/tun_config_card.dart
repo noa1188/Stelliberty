@@ -65,9 +65,9 @@ class _TunConfigCardState extends State<TunConfigCard> {
   bool _tunAutoDetectInterface = true;
   bool _tunStrictRoute = true;
   final TextEditingController _tunMtuController = TextEditingController();
-  final TextEditingController _tunDnsHijackController = TextEditingController();
+  final TextEditingController _tunDnsHijacksController = TextEditingController();
   bool _tunAutoRedirect = false;
-  final TextEditingController _tunRouteExcludeAddressController =
+  final TextEditingController _tunRouteExcludeAddressesController =
       TextEditingController();
   bool _tunDisableIcmpForwarding = false;
 
@@ -115,8 +115,8 @@ class _TunConfigCardState extends State<TunConfigCard> {
     _versionResponseSubscription?.cancel();
     _tunDeviceController.dispose();
     _tunMtuController.dispose();
-    _tunDnsHijackController.dispose();
-    _tunRouteExcludeAddressController.dispose();
+    _tunDnsHijacksController.dispose();
+    _tunRouteExcludeAddressesController.dispose();
     super.dispose();
   }
 
@@ -133,10 +133,10 @@ class _TunConfigCardState extends State<TunConfigCard> {
       _tunAutoDetectInterface = configState.isTunAutoDetectInterfaceEnabled;
       _tunStrictRoute = configState.isTunStrictRouteEnabled;
       _tunMtuController.text = configState.tunMtu.toString();
-      _tunDnsHijackController.text = configState.tunDnsHijack.join('，');
+      _tunDnsHijacksController.text = configState.tunDnsHijacks.join('，');
       _tunAutoRedirect = configState.isTunAutoRedirectEnabled;
-      _tunRouteExcludeAddressController.text = configState
-          .tunRouteExcludeAddress
+      _tunRouteExcludeAddressesController.text = configState
+          .tunRouteExcludeAddresses
           .join('，');
       _tunDisableIcmpForwarding = configState.isTunIcmpForwardingDisabled;
     });
@@ -264,7 +264,7 @@ class _TunConfigCardState extends State<TunConfigCard> {
       ClashManager.instance.setTunMtu(mtu);
 
       // 保存 DNS 劫持列表
-      final hijacks = _tunDnsHijackController.text
+      final hijacks = _tunDnsHijacksController.text
           .split('，')
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
@@ -272,7 +272,7 @@ class _TunConfigCardState extends State<TunConfigCard> {
       ClashManager.instance.setTunDnsHijack(hijacks);
 
       // 保存排除路由地址列表
-      final addresses = _tunRouteExcludeAddressController.text
+      final addresses = _tunRouteExcludeAddressesController.text
           .split('，')
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty)
@@ -661,7 +661,7 @@ class _TunConfigCardState extends State<TunConfigCard> {
           SizedBox(
             width: 200,
             child: ModernTextField(
-              controller: _tunDnsHijackController,
+              controller: _tunDnsHijacksController,
               hintText: 'any:53, tcp://any:53',
               height: 36,
             ),
@@ -736,7 +736,7 @@ class _TunConfigCardState extends State<TunConfigCard> {
           SizedBox(
             width: 200,
             child: ModernTextField(
-              controller: _tunRouteExcludeAddressController,
+              controller: _tunRouteExcludeAddressesController,
               hintText: '172.20.0.0/16',
               height: 36,
             ),

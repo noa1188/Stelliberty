@@ -37,6 +37,8 @@ dependencies:
   device_info_plus: ^12.1.0
   # 状态管理
   provider: ^6.1.5
+  # 同步锁支持
+  synchronized: ^3.4.0
 
   # 国际化支持
   slang: ^4.8.1

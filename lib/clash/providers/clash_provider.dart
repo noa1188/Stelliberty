@@ -82,10 +82,10 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool get isTunAutoRedirectEnabled => _configState.isTunAutoRedirectEnabled;
   bool get isTunAutoDetectInterfaceEnabled =>
       _configState.isTunAutoDetectInterfaceEnabled;
-  List<String> get tunDnsHijack => _configState.tunDnsHijack;
+  List<String> get tunDnsHijacks => _configState.tunDnsHijacks;
   bool get isTunStrictRouteEnabled => _configState.isTunStrictRouteEnabled;
-  List<String> get tunRouteExcludeAddress =>
-      _configState.tunRouteExcludeAddress;
+  List<String> get tunRouteExcludeAddresses =>
+      _configState.tunRouteExcludeAddresses;
   bool get isTunIcmpForwardingDisabled =>
       _configState.isTunIcmpForwardingDisabled;
   int get tunMtu => _configState.tunMtu;
@@ -199,7 +199,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool get isBatchTestingDelay => _isBatchTestingDelay;
 
   // UI 更新节流：记录上次通知时间
-  DateTime? _lastNotifyTime;
+  DateTime? _lastNotifiedAt;
   // UI 更新节流间隔（毫秒）
   static const int _notifyThrottleMs = 100;
 
@@ -207,6 +207,10 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, Timer> _delayExpireTimers = {};
   // 延迟值保留时长（5 分钟）
   static const Duration _delayRetentionDuration = Duration(minutes: 5);
+
+  // 批量延迟测试信号订阅（防止泄漏）
+  StreamSubscription? _progressSubscription;
+  StreamSubscription? _completeSubscription;
 
   // selections 内存缓存：记录每个代理组当前选中的节点
   final Map<String, String> _selections = {};
@@ -548,17 +552,17 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       // 添加重试逻辑，避免因 Clash API 繁忙导致超时
       Map<String, dynamic>? proxies;
-      int attemptNumber = 0;
+      int attemptCount = 0;
       const maxRetries = 2;
 
-      while (attemptNumber <= maxRetries) {
-        attemptNumber++;
+      while (attemptCount <= maxRetries) {
+        attemptCount++;
         try {
           proxies = await _clashManager.getProxies();
           break; // 成功则跳出循环
         } catch (e) {
           final errorMsg = e.toString();
-          final isLastAttempt = attemptNumber > maxRetries;
+          final isLastAttempt = attemptCount > maxRetries;
 
           // 检查是否为 IPC 未就绪错误（启动时的正常情况）
           final isIpcNotReady = _isIpcNotReadyError(errorMsg);
@@ -566,9 +570,9 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
           if (!isLastAttempt) {
             // 还有重试机会
             if (isIpcNotReady) {
-              Logger.debug('IPC 尚未就绪（第 $attemptNumber 次尝试），1秒后重试');
+              Logger.debug('IPC 尚未就绪（第 $attemptCount 次尝试），1秒后重试');
             } else {
-              Logger.warning('获取代理数据失败（第 $attemptNumber 次尝试），1秒后重试：$e');
+              Logger.warning('获取代理数据失败（第 $attemptCount 次尝试），1秒后重试：$e');
             }
             await Future.delayed(const Duration(seconds: 1));
           } else {
@@ -577,7 +581,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
               Logger.debug('IPC 仍未就绪，稍后自动重试（不显示错误）');
               return; // 静默失败，不设置 errorMessage
             } else {
-              Logger.error('获取代理数据失败，已尝试 $attemptNumber 次：$e');
+              Logger.error('获取代理数据失败，已尝试 $attemptCount 次：$e');
               rethrow; // 真正的错误才抛出
             }
           }
@@ -590,7 +594,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       apiStopwatch.stop();
       Logger.debug(
-        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptNumber）',
+        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptCount）',
       );
 
       // 【性能监控】解析节点耗时
@@ -698,17 +702,17 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
       // 从 Clash API 获取代理数据
       final apiStopwatch = Stopwatch()..start();
       Map<String, dynamic>? proxies;
-      int attemptNumber = 0;
+      int attemptCount = 0;
       const maxRetries = 2;
 
-      while (attemptNumber <= maxRetries) {
-        attemptNumber++;
+      while (attemptCount <= maxRetries) {
+        attemptCount++;
         try {
           proxies = await _clashManager.getProxies();
           break;
         } catch (e) {
           final errorMsg = e.toString();
-          final isLastAttempt = attemptNumber > maxRetries;
+          final isLastAttempt = attemptCount > maxRetries;
 
           // 检查是否为 IPC 未就绪或连接失效错误
           final isIpcNotReady = _isIpcNotReadyError(errorMsg);
@@ -716,9 +720,9 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
           if (!isLastAttempt) {
             // 还有重试机会
             if (isIpcNotReady) {
-              Logger.debug('IPC 连接失效（第 $attemptNumber 次尝试），1秒后重试');
+              Logger.debug('IPC 连接失效（第 $attemptCount 次尝试），1秒后重试');
             } else {
-              Logger.warning('获取代理数据失败（第 $attemptNumber 次尝试），1秒后重试：$e');
+              Logger.warning('获取代理数据失败（第 $attemptCount 次尝试），1秒后重试：$e');
             }
             await Future.delayed(const Duration(seconds: 1));
           } else {
@@ -727,7 +731,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
               Logger.debug('IPC 连接仍失效，稍后自动重试（不显示错误）');
               return; // 静默失败，不设置 errorMessage
             } else {
-              Logger.error('获取代理数据失败，已尝试 $attemptNumber 次：$e');
+              Logger.error('获取代理数据失败，已尝试 $attemptCount 次：$e');
               rethrow;
             }
           }
@@ -740,7 +744,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       apiStopwatch.stop();
       Logger.debug(
-        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptNumber）',
+        '从 Clash API 获取代理数据完成：${proxies.length} 项（耗时：${apiStopwatch.elapsedMilliseconds}ms，尝试次数：$attemptCount）',
       );
 
       // 解析节点
@@ -1125,7 +1129,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
     _isBatchTestingDelay = true;
     _testingNodes.clear();
     _testingNodes.addAll(proxyNames);
-    _lastNotifyTime = null; // 重置节流计时器
+    _lastNotifiedAt = null; // 重置节流计时器
     notifyListeners();
 
     // 标记是否有待通知的更新
@@ -1153,14 +1157,14 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
           // 节流通知 UI 更新（每 100ms 最多一次）
           final now = DateTime.now();
           if (hasPendingUpdates &&
-              (_lastNotifyTime == null ||
-                  now.difference(_lastNotifyTime!).inMilliseconds >=
+              (_lastNotifiedAt == null ||
+                  now.difference(_lastNotifiedAt!).inMilliseconds >=
                       _notifyThrottleMs)) {
             // 仅在有更新时才创建新 Map（触发 Selector 重建）
             _proxyNodes = Map<String, ProxyNode>.from(_proxyNodes);
             _proxyNodesUpdateCount++;
             notifyListeners();
-            _lastNotifyTime = now;
+            _lastNotifiedAt = now;
             hasPendingUpdates = false; // 清除待更新标记
           }
         },
@@ -1173,7 +1177,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
       _testingNodes.clear();
       _isBatchTestingDelay = false;
-      _lastNotifyTime = null;
+      _lastNotifiedAt = null;
       notifyListeners();
     }
   }
@@ -1205,7 +1209,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
     _isBatchTestingDelay = true;
     _testingNodes.clear();
     _testingNodes.addAll(allProxyNames);
-    _lastNotifyTime = null; // 重置节流计时器
+    _lastNotifiedAt = null; // 重置节流计时器
     notifyListeners();
 
     // 标记是否有待通知的更新
@@ -1222,14 +1226,15 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       Logger.info('开始批量测试所有节点延迟，共 ${proxyNames.length} 个节点，并发数：$concurrency');
 
-      // 订阅 Rust 层进度信号
-      StreamSubscription? progressSubscription;
-      StreamSubscription? completeSubscription;
+      // 取消旧订阅（防止泄漏）
+      await _progressSubscription?.cancel();
+      await _completeSubscription?.cancel();
+
       final completer = Completer<void>();
 
       try {
         // 订阅进度信号（流式更新）
-        progressSubscription = signals.DelayTestProgress.rustSignalStream
+        _progressSubscription = signals.DelayTestProgress.rustSignalStream
             .listen((result) {
               final nodeName = result.message.nodeName;
               final delayMs = result.message.delayMs;
@@ -1271,20 +1276,20 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
               // 节流通知 UI 更新（每 100ms 最多一次）
               final now = DateTime.now();
               if (hasPendingUpdates &&
-                  (_lastNotifyTime == null ||
-                      now.difference(_lastNotifyTime!).inMilliseconds >=
+                  (_lastNotifiedAt == null ||
+                      now.difference(_lastNotifiedAt!).inMilliseconds >=
                           _notifyThrottleMs)) {
                 // 仅在有更新时才创建新 Map（触发 Selector 重建）
                 _proxyNodes = Map<String, ProxyNode>.from(_proxyNodes);
                 _proxyNodesUpdateCount++;
                 notifyListeners();
-                _lastNotifyTime = now;
+                _lastNotifiedAt = now;
                 hasPendingUpdates = false;
               }
             });
 
         // 订阅完成信号
-        completeSubscription = signals.BatchDelayTestComplete.rustSignalStream
+        _completeSubscription = signals.BatchDelayTestComplete.rustSignalStream
             .listen((result) {
               final message = result.message;
               if (message.isSuccessful) {
@@ -1322,8 +1327,10 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
         );
       } finally {
         // 取消订阅
-        await progressSubscription?.cancel();
-        await completeSubscription?.cancel();
+        await _progressSubscription?.cancel();
+        await _completeSubscription?.cancel();
+        _progressSubscription = null;
+        _completeSubscription = null;
       }
     } finally {
       // 确保最后一次更新（包含所有节点的最终结果）
@@ -1333,7 +1340,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
       _testingNodes.clear();
       _isBatchTestingDelay = false;
-      _lastNotifyTime = null;
+      _lastNotifiedAt = null;
       notifyListeners();
     }
   }
@@ -1548,6 +1555,9 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
       timer.cancel();
     }
     _delayExpireTimers.clear();
+
+    _progressSubscription?.cancel();
+    _completeSubscription?.cancel();
 
     super.dispose();
   }
