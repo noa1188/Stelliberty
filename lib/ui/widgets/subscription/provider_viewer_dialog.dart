@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart' as flutter_provider;
 import 'package:stelliberty/clash/model/provider_model.dart';
 import 'package:stelliberty/clash/manager/clash_manager.dart';
 import 'package:stelliberty/clash/services/geo_service.dart';
@@ -39,6 +38,7 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSyncingAll = false;
+  bool _hasLoadedProviders = false;
 
   // 搜索相关
   final TextEditingController _searchController = TextEditingController();
@@ -47,8 +47,17 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
   @override
   void initState() {
     super.initState();
-    _loadProviders();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 只在第一次调用时加载，避免重复加载
+    if (!_hasLoadedProviders) {
+      _hasLoadedProviders = true;
+      _loadProviders();
+    }
   }
 
   @override
@@ -118,10 +127,7 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
     });
 
     try {
-      final clashManager = flutter_provider.Provider.of<ClashManager>(
-        context,
-        listen: false,
-      );
+      final clashManager = ClashManager.instance;
       final apiClient = clashManager.apiClient;
 
       if (apiClient == null) {
@@ -176,10 +182,7 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
       return;
     }
 
-    final clashManager = flutter_provider.Provider.of<ClashManager>(
-      context,
-      listen: false,
-    );
+    final clashManager = ClashManager.instance;
     final apiClient = clashManager.apiClient;
 
     if (apiClient == null) {
@@ -723,13 +726,10 @@ class _ProviderViewerDialogState extends State<ProviderViewerDialog> {
     );
   }
 
-  // 执行同步操作（纯逻辑，无副作用）
+  // 执行同步操作
   Future<_SyncResult> _executeSyncOperation(Provider provider) async {
     try {
-      final clashManager = flutter_provider.Provider.of<ClashManager>(
-        context,
-        listen: false,
-      );
+      final clashManager = ClashManager.instance;
       final apiClient = clashManager.apiClient;
 
       if (apiClient == null) {

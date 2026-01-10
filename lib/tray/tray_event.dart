@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:stelliberty/services/log_print_service.dart';
@@ -240,14 +241,24 @@ class TrayEventHandler with TrayListener {
 
     Logger.info('从托盘切换虚拟网卡模式 - 当前状态：${isTunEnabled ? "已启用" : "未启用"}');
 
-    try {
-      // 切换虚拟网卡模式（等待结果）
-      await manager.setTunEnabled(!isTunEnabled);
-    } catch (e) {
-      Logger.error('从托盘切换虚拟网卡模式失败：$e');
-    } finally {
-      _isSwitching = false;
-    }
+    // 切换虚拟网卡模式（异步执行，不阻塞返回）
+    unawaited(
+      manager
+          .setTunEnabled(!isTunEnabled)
+          .then((success) {
+            if (success) {
+              // 刷新配置状态以更新 UI
+              _clashProvider!.refreshConfigState();
+            }
+          })
+          .catchError((e) {
+            Logger.error('从托盘切换虚拟网卡模式失败：$e');
+          })
+          .whenComplete(() {
+            // 操作完成后重置切换标志
+            _isSwitching = false;
+          }),
+    );
   }
 
   // 切换出站模式
@@ -274,14 +285,8 @@ class TrayEventHandler with TrayListener {
 
       if (success) {
         Logger.info('出站模式已从托盘切换到: $outboundMode');
-        // 确保状态同步：强制触发一次状态更新通知
-        // 这样主页卡片和其他监听器都能收到更新
-        Future.microtask(() {
-          // 延迟一个微任务确保状态已完全更新
-          if (_clashProvider!.configState.outboundMode == outboundMode) {
-            Logger.debug('托盘出站模式切换完成，触发状态同步通知');
-          }
-        });
+        // 刷新配置状态
+        _clashProvider!.refreshConfigState();
       } else {
         Logger.warning('从托盘切换出站模式失败，保持原模式: $currentOutboundMode');
       }

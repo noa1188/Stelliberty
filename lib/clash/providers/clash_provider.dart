@@ -303,6 +303,8 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       Logger.debug('应用恢复，刷新代理数据（全局）');
       if (isCoreRunning) {
+        // 刷新配置状态
+        refreshConfigState();
         // 刷新代理状态以同步外部控制器的节点切换
         refreshProxiesFromClash();
       }

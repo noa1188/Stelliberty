@@ -189,16 +189,19 @@ class _OutboundModeCardState extends State<OutboundModeCard> {
     });
 
     try {
-      final success = await context
-          .read<ClashProvider>()
-          .clashManager
-          .setOutboundMode(outboundMode);
+      final clashProvider = context.read<ClashProvider>();
+      final success = await clashProvider.clashManager.setOutboundMode(
+        outboundMode,
+      );
 
-      if (context.mounted && !success) {
+      if (success) {
+        // 刷新 ClashProvider 的配置状态，确保内存中的状态与持久化一致
+        clashProvider.refreshConfigState();
+        // 出站模式切换后手动更新托盘菜单
+        AppTrayManager().updateTrayMenuManually();
+      } else if (context.mounted) {
         await _loadCurrentMode();
       }
-      // 出站模式切换后手动更新托盘菜单
-      AppTrayManager().updateTrayMenuManually();
     } catch (e) {
       Logger.error('切换出站模式失败: $e');
       await _loadCurrentMode();
