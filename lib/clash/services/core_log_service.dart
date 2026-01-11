@@ -27,7 +27,7 @@ class ClashLogService {
   // 当前日志级别
   ClashLogLevel get currentLogLevel => _currentLogLevel;
 
-  // 开始监控日志（IPC模式）
+  // 开始监控日志（IPC 模式）
   Future<void> startMonitoring([String? _]) async {
     if (_isMonitoring) {
       return;
@@ -46,7 +46,7 @@ class ClashLogService {
       return;
     }
 
-    Logger.info('开始 Clash 日志监控 (IPC模式，级别：${_currentLogLevel.toApiParam()})');
+    Logger.info('开始 Clash 日志监控 (IPC 模式，级别：${_currentLogLevel.toApiParam()})');
 
     // 监听来自 Rust 的日志数据
     _logSubscription = IpcLogData.rustSignalStream.listen((signal) {

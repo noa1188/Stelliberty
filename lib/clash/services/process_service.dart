@@ -36,7 +36,7 @@ class ProcessService {
     // 指定数据目录（Geodata 文件位置）
     args.addAll(['-d', geoDataDir]);
 
-    // IPC端点从配置文件读取：
+    // IPC 端点从配置文件读取：
     // Windows: external-controller-pipe
     // Unix: external-controller-unix
     // HTTP API: external-controller (如果启用)

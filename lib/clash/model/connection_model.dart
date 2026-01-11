@@ -3,7 +3,7 @@ library;
 
 // 元数据信息
 class Metadata {
-  // 连接类型（HTTP/HTTPS/SOCKS5/Inner等）
+  // 连接类型（HTTP/HTTPS/SOCKS5/Inner 等）
   final String type;
 
   // 网络协议类型（tcp/udp）

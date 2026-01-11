@@ -250,7 +250,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
         lowerType == 'fallback';
   }
 
-  // 检查是否为 IPC未就绪错误
+  // 检查是否为 IPC 未就绪错误
   // 这类错误在 Clash 启动期间或系统唤醒后是正常的临时状态
   static bool _isIpcNotReadyError(String errorMessage) {
     // Windows: os error 2 (系统找不到指定的文件)
@@ -566,7 +566,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
           final errorMsg = e.toString();
           final isLastAttempt = attemptCount > maxRetries;
 
-          // 检查是否为 IPC未就绪错误（启动时的正常情况）
+          // 检查是否为 IPC 未就绪错误（启动时的正常情况）
           final isIpcNotReady = _isIpcNotReadyError(errorMsg);
 
           if (!isLastAttempt) {
@@ -716,7 +716,7 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
           final errorMsg = e.toString();
           final isLastAttempt = attemptCount > maxRetries;
 
-          // 检查是否为 IPC未就绪或连接失效错误
+          // 检查是否为 IPC 未就绪或连接失效错误
           final isIpcNotReady = _isIpcNotReadyError(errorMsg);
 
           if (!isLastAttempt) {

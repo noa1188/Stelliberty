@@ -131,9 +131,9 @@ class Subscription {
   final bool isLocalFile; // 是否为本地文件
   final SubscriptionProxyMode proxyMode; // 订阅更新代理模式
   final String? lastError; // 最后一次更新错误信息
-  final List<String> overrideIds; // 规则覆写 ID列表（已选中的）
+  final List<String> overrideIds; // 规则覆写 ID 列表（已选中的）
   final List<String> overrideSortPreferences; // 规则覆写排序偏好（完整顺序，包括未选中的）
-  final List<String> failedOverrideIds; // 失败的覆写 ID列表(启动失败时记录)
+  final List<String> failedOverrideIds; // 失败的覆写 ID 列表(启动失败时记录)
   final String userAgent; // User-Agent（仅远程订阅有效，默认为 clash.meta）
   final bool hasConfigLoadFailed; // 配置加载失败标记（用于 UI 显示警告）
 

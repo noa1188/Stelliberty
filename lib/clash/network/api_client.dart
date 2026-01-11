@@ -6,7 +6,7 @@ import 'package:stelliberty/clash/network/ipc_request_helper.dart';
 
 // Clash RESTful API 客户端
 //
-// 使用 IPC模式通信
+// 使用 IPC 模式通信
 class ClashApiClient {
   ClashApiClient();
 
@@ -16,24 +16,24 @@ class ClashApiClient {
   Future<Map<String, dynamic>>? _pendingRequest;
   static const _cacheDuration = Duration(seconds: 1);
 
-  // 内部 GET 请求（IPC模式）
+  // 内部 GET 请求（IPC 模式）
   Future<Map<String, dynamic>> _internalGet(String path) async {
     return await IpcRequestHelper.instance.get(path);
   }
 
-  // 内部 PATCH 请求（IPC模式）
+  // 内部 PATCH 请求（IPC 模式）
   Future<bool> _internalPatch(String path, Map<String, dynamic> body) async {
     await IpcRequestHelper.instance.patch(path, body: body);
     return true;
   }
 
-  // 内部 PUT 请求（IPC模式）
+  // 内部 PUT 请求（IPC 模式）
   Future<bool> _internalPut(String path, Map<String, dynamic> body) async {
     await IpcRequestHelper.instance.put(path, body: body);
     return true;
   }
 
-  // 内部 DELETE 请求（IPC模式）
+  // 内部 DELETE 请求（IPC 模式）
   Future<bool> _internalDelete(String path) async {
     await IpcRequestHelper.instance.delete(path);
     return true;
@@ -86,7 +86,7 @@ class ClashApiClient {
         // 简化日志：只在第 1 次、每 5 次、最后 3 次打印
         final shouldLog = i == 0 || (i + 1) % 5 == 0 || i >= maxRetries - 3;
         if (shouldLog) {
-          // 检查是否为 IPC未就绪（Named Pipe 还未创建）
+          // 检查是否为 IPC 未就绪（Named Pipe 还未创建）
           final errorMsg = e.toString();
           final isIpcNotReady =
               errorMsg.contains('系统找不到指定的文件') ||
@@ -655,7 +655,7 @@ class ClashApiClient {
     }
   }
 
-  // 设置虚拟网卡自动TCP 重定向（配置重载，无需重启）
+  // 设置虚拟网卡自动 TCP 重定向（配置重载，无需重启）
   Future<bool> setTunAutoRedirect(bool enable) async {
     try {
       await _internalPatch('/configs', {
@@ -685,7 +685,7 @@ class ClashApiClient {
     }
   }
 
-  // 设置虚拟网卡禁用ICMP 转发（配置重载，无需重启）
+  // 设置虚拟网卡禁用 ICMP 转发（配置重载，无需重启）
   Future<bool> setTunDisableIcmpForwarding(bool disabled) async {
     try {
       await _internalPatch('/configs', {
@@ -759,7 +759,7 @@ class ClashApiClient {
     }
   }
 
-  // 更新 Provider（从远程URL 同步）
+  // 更新 Provider（从远程 URL 同步）
   Future<bool> updateProvider(String providerName) async {
     try {
       final encodedName = Uri.encodeComponent(providerName);

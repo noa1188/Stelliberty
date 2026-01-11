@@ -4,7 +4,7 @@ import 'package:stelliberty/services/log_print_service.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
 
 // Clash 流量监控服务
-// 纯技术实现：通过 IPC接收 Rust 信号并转发原始流量数据
+// 纯技术实现：通过 IPC 接收 Rust 信号并转发原始流量数据
 class TrafficMonitor {
   static final TrafficMonitor instance = TrafficMonitor._();
   TrafficMonitor._();
@@ -19,7 +19,7 @@ class TrafficMonitor {
   // 是否正在监控
   bool get isMonitoring => _isMonitoring;
 
-  // 开始监控流量（IPC模式）
+  // 开始监控流量（IPC 模式）
   Future<void> startMonitoring([String? _]) async {
     if (_isMonitoring) return;
 
@@ -35,7 +35,7 @@ class TrafficMonitor {
 
     // 发送启动流量监控信号到 Rust
     const StartTrafficStream().sendSignalToRust();
-    Logger.info('流量监控已启动 (IPC模式)');
+    Logger.info('流量监控已启动 (IPC 模式)');
   }
 
   // 停止监控流量

@@ -13,7 +13,7 @@ class ServiceManager {
   static ServiceManager get instance => _instance;
   ServiceManager._internal();
 
-  // 缓存的服务状态（供非 UI组件查询）
+  // 缓存的服务状态（供非 UI 组件查询）
   ServiceState _cachedState = ServiceState.unknown;
   ServiceState get cachedState => _cachedState;
 

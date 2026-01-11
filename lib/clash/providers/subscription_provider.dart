@@ -108,7 +108,7 @@ class SubscriptionProvider extends ChangeNotifier {
   }
 
   // 处理当前订阅的覆写失败
-  // 当启动失败时调用，禁用当前订阅的所有覆写并记录失败ID
+  // 当启动失败时调用，禁用当前订阅的所有覆写并记录失败 ID
   Future<void> handleOverridesFailed() async {
     if (currentSubscription == null) {
       Logger.warning('没有当前订阅，跳过覆写失败处理');
@@ -127,7 +127,7 @@ class SubscriptionProvider extends ChangeNotifier {
     Logger.error('订阅：${subscription.name}');
     Logger.error('失败的覆写 ID：${subscription.overrideIds}');
 
-    // 记录失败的覆写 ID并清空当前覆写
+    // 记录失败的覆写 ID 并清空当前覆写
     final index = _subscriptions.indexWhere((s) => s.id == subscription.id);
     if (index != -1) {
       _subscriptions[index] = subscription.copyWith(
@@ -138,7 +138,7 @@ class SubscriptionProvider extends ChangeNotifier {
       // 保存到持久化存储
       await _manager.saveSubscriptionList(_subscriptions);
 
-      // 通知 UI更新
+      // 通知 UI 更新
       notifyListeners();
 
       Logger.info('已禁用订阅 ${subscription.name} 的所有覆写');
@@ -148,7 +148,7 @@ class SubscriptionProvider extends ChangeNotifier {
     Logger.info('覆写回退完成');
   }
 
-  // 清理订阅中无效的覆写 ID引用
+  // 清理订阅中无效的覆写 ID 引用
   // 用于在初始化时移除已删除的覆写引用
   Future<void> cleanupInvalidOverrideReferences(
     Future<List<app_override.OverrideConfig>> Function(List<String>)
@@ -184,7 +184,7 @@ class SubscriptionProvider extends ChangeNotifier {
           .where((id) => validIds.contains(id))
           .toList();
 
-      // 找出无效的ID
+      // 找出无效的 ID
       final invalidIds = subscription.overrideIds
           .where((id) => !validIds.contains(id))
           .toList();
@@ -772,11 +772,11 @@ class SubscriptionProvider extends ChangeNotifier {
     // 不清除全局错误，单个操作不影响全局状态
 
     try {
-      // 创建本地订阅对象（url为空，表示本地文件）
+      // 创建本地订阅对象（url 为空，表示本地文件）
       final subscription =
           Subscription.create(
             name: name,
-            url: '', // 本地文件无URL
+            url: '', // 本地文件无 URL
           ).copyWith(
             autoUpdateMode: AutoUpdateMode.disabled, // 本地文件不支持自动更新
             isLocalFile: true, // 标记为本地文件
@@ -928,7 +928,7 @@ class SubscriptionProvider extends ChangeNotifier {
     Logger.info('订阅排序已更新：${subscription.name} 从 $oldIndex 移动到 $newIndex');
   }
 
-  // 从所有订阅中移除指定的覆写 ID引用
+  // 从所有订阅中移除指定的覆写 ID 引用
   // 用于在删除覆写时清理订阅配置
   Future<void> removeOverrideFromAllSubscriptions(String overrideId) async {
     Logger.info('从所有订阅中移除覆写引用：$overrideId');

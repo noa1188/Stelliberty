@@ -62,7 +62,7 @@ class SubscriptionService {
     SubscriptionProxyMode proxyMode,
     int mixedPort,
   ) async {
-    // 使用订阅 ID作为请求标识符
+    // 使用订阅 ID 作为请求标识符
     final requestId = subscription.id;
 
     // 使用 Rust 层下载订阅

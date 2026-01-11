@@ -197,9 +197,9 @@ class _UwpLoopbackDialogState extends State<UwpLoopbackDialog> {
     return ModernDialog(
       title: trans.uwp_loopback.dialog_title,
       titleIcon: Icons.apps,
-      maxWidth: screenSize.width - 400, // 特殊尺寸：左右各200px间距
+      maxWidth: screenSize.width - 400, // 特殊尺寸：左右各200px 间距
       maxHeightRatio:
-          (screenSize.height - 100) / screenSize.height, // 上下各50px间距
+          (screenSize.height - 100) / screenSize.height, // 上下各50px 间距
       searchController: _searchController,
       searchHint: trans.uwp_loopback.search_placeholder,
       onSearchChanged: (value) {

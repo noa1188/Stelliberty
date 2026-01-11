@@ -8,13 +8,13 @@ import 'package:stelliberty/src/bindings/signals/signals.dart';
 import 'dart:io';
 import 'dart:async';
 
-// IPCAPI 测试
+// IPC API 测试
 //
-// 测试通过 IPC调用 Clash API
+// 测试通过 IPC 调用 Clash API
 class IpcApiTest {
   static Future<void> run() async {
     Logger.info('======================================');
-    Logger.info('开始 IPCAPI 测试');
+    Logger.info('开始 IPC API 测试');
     Logger.info('======================================');
 
     try {
@@ -79,8 +79,8 @@ class IpcApiTest {
 
       Logger.info('✓ Clash 核心已启动');
 
-      // 2. 等待 IPC端点就绪
-      Logger.info('等待 3 秒，确保 IPC端点就绪...');
+      // 2. 等待 IPC 端点就绪
+      Logger.info('等待 3 秒，确保 IPC 端点就绪...');
       await Future.delayed(const Duration(seconds: 3));
 
       // 2. 测试 GET /version
@@ -140,7 +140,7 @@ class IpcApiTest {
 
       exit(0);
     } catch (e, stack) {
-      Logger.error('✗ IPCAPI 测试失败: $e');
+      Logger.error('✗ IPC API 测试失败: $e');
       Logger.error('堆栈: $stack');
       exit(1);
     }
