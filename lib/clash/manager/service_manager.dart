@@ -13,7 +13,7 @@ class ServiceManager {
   static ServiceManager get instance => _instance;
   ServiceManager._internal();
 
-  // 缓存的服务状态（供非UI组件查询）
+  // 缓存的服务状态（供非 UI组件查询）
   ServiceState _cachedState = ServiceState.unknown;
   ServiceState get cachedState => _cachedState;
 
@@ -74,16 +74,13 @@ class ServiceManager {
       // 等待响应
       final signal = await ServiceOperationResult.rustSignalStream.first
           .timeout(
-            const Duration(seconds: 30),
+            const Duration(seconds: 10),
             onTimeout: () {
-              throw Exception('安装服务超时（30秒）');
+              throw Exception('安装服务超时（10 秒）');
             },
           );
 
       if (signal.message.isSuccessful) {
-        // 等待服务完全就绪
-        await Future.delayed(const Duration(seconds: 2));
-
         // 立即刷新服务状态
         await refreshStatus();
         Logger.debug('服务状态已刷新为：$_cachedState');
@@ -164,9 +161,9 @@ class ServiceManager {
       // 等待响应
       final signal = await ServiceOperationResult.rustSignalStream.first
           .timeout(
-            const Duration(seconds: 30),
+            const Duration(seconds: 10),
             onTimeout: () {
-              throw Exception('卸载服务超时（30秒）');
+              throw Exception('卸载服务超时（10 秒）');
             },
           );
 
