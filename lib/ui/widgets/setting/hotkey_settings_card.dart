@@ -47,7 +47,7 @@ class _HotkeySettingsCardState extends State<HotkeySettingsCard> {
   }
 
   Future<void> _toggleEnabled(bool value) async {
-    final oldValue = _isEnabled;
+    final previousValue = _isEnabled;
     setState(() {
       _isEnabled = value;
     });
@@ -58,7 +58,7 @@ class _HotkeySettingsCardState extends State<HotkeySettingsCard> {
       Logger.info('全局快捷键已${value ? "启用" : "禁用"}');
     } catch (e) {
       setState(() {
-        _isEnabled = oldValue;
+        _isEnabled = previousValue;
       });
       Logger.error('切换全局快捷键状态失败: $e');
       if (mounted) {

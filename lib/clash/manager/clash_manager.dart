@@ -130,20 +130,20 @@ class ClashManager {
   }
 
   // 设置覆写获取回调
-  void setOverridesGetter(List<OverrideConfig> Function() callback) {
-    _getOverrides = callback;
+  void setOverridesGetter(List<OverrideConfig> Function() getter) {
+    _getOverrides = getter;
     Logger.debug('已设置覆写获取回调到 ClashManager');
   }
 
   // 设置覆写失败回调（由 SubscriptionProvider 注入）
-  void setOnOverridesFailed(Future<void> Function() callback) {
-    _onOverridesFailed = callback;
+  void setOnOverridesFailed(Future<void> Function() handler) {
+    _onOverridesFailed = handler;
     Logger.debug('已设置覆写失败回调到 ClashManager');
   }
 
   // 设置默认配置启动成功回调（由 SubscriptionProvider 注入）
-  void setOnThirdLevelFallback(Future<void> Function() callback) {
-    _onThirdLevelFallback = callback;
+  void setOnThirdLevelFallback(Future<void> Function() handler) {
+    _onThirdLevelFallback = handler;
     Logger.debug('已设置默认配置启动成功回调到 ClashManager');
   }
 

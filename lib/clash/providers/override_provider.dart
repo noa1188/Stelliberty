@@ -35,14 +35,14 @@ class OverrideProvider extends ChangeNotifier {
   Future<void> Function(String overrideId)? _onOverrideContentUpdated;
 
   // 设置覆写删除回调
-  void setOnOverrideDeleted(Future<void> Function(String) callback) {
-    _onOverrideDeleted = callback;
+  void setOnOverrideDeleted(Future<void> Function(String) handler) {
+    _onOverrideDeleted = handler;
     Logger.debug('已设置覆写删除回调');
   }
 
   // 设置覆写内容更新回调
-  void setOnOverrideContentUpdated(Future<void> Function(String) callback) {
-    _onOverrideContentUpdated = callback;
+  void setOnOverrideContentUpdated(Future<void> Function(String) handler) {
+    _onOverrideContentUpdated = handler;
     Logger.debug('已设置覆写内容更新回调');
   }
 

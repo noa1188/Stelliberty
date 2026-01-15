@@ -6,7 +6,7 @@ import 'package:stelliberty/services/log_print_service.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
 
 // 更新进度回调：progress (0.0-1.0)，message (当前步骤描述)
-typedef ProgressCallback = void Function(double progress, String message);
+typedef ProgressHandler = void Function(double progress, String message);
 
 // 核心更新服务：从 GitHub 下载 Mihomo 核心并替换现有核心
 class CoreUpdateService {
@@ -100,7 +100,7 @@ class CoreUpdateService {
   // 下载核心文件，成功返回新版本号和解压后的核心字节
   // 返回 (version, coreBytes) 元组，调用方负责停止核心后替换文件
   static Future<(String, List<int>)> downloadCore({
-    ProgressCallback? onProgress,
+    ProgressHandler? onProgress,
   }) async {
     final completer = Completer<DownloadCoreResponse>();
     StreamSubscription? responseSubscription;
@@ -246,7 +246,7 @@ class CoreUpdateService {
   static Future<void> deleteOldCore(String coreDir) async {
     final platform = _getCurrentPlatform();
     final coreName = platform == 'windows' ? 'clash-core.exe' : 'clash-core';
-    final backupFile = File(p.join(coreDir, '${coreName}_old'));
+    final backupFile = File(p.join(coreDir, '${coreName}_backup'));
 
     if (await backupFile.exists()) {
       try {

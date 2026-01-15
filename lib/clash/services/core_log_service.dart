@@ -83,19 +83,22 @@ class ClashLogService {
       return;
     }
 
-    final oldLevel = _currentLogLevel;
+    final previousLevel = _currentLogLevel;
     _currentLogLevel = level;
 
-    Logger.info('日志级别已更新：${oldLevel.toApiParam()} -> ${level.toApiParam()}');
+    Logger.info(
+      '日志级别已更新：${previousLevel.toApiParam()} -> ${level.toApiParam()}',
+    );
 
     // 日志级别通过 API 热更新到核心，连接保持活动。
     // 仅在 silent 与其他级别切换时启停监控。
 
-    if (oldLevel == ClashLogLevel.silent && level != ClashLogLevel.silent) {
+    if (previousLevel == ClashLogLevel.silent &&
+        level != ClashLogLevel.silent) {
       // 从 silent 切换到其他级别：启动监控
       Logger.info('从 silent 切换到 ${level.toApiParam()}，启动日志监控');
       await startMonitoring();
-    } else if (oldLevel != ClashLogLevel.silent &&
+    } else if (previousLevel != ClashLogLevel.silent &&
         level == ClashLogLevel.silent) {
       // 从其他级别切换到 silent：停止监控
       Logger.info('切换到 silent，停止日志监控');

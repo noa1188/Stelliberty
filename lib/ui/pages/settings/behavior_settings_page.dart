@@ -246,7 +246,7 @@ class _BehaviorSettingsPageState extends State<BehaviorSettingsPage> {
 
   // 更新应用日志设置
   Future<void> _updateAppLogSetting(bool value) async {
-    final oldValue = _appLogEnabled;
+    final previousValue = _appLogEnabled;
     // 更新 UI
     setState(() {
       _appLogEnabled = value;
@@ -262,7 +262,7 @@ class _BehaviorSettingsPageState extends State<BehaviorSettingsPage> {
     } catch (e) {
       // 持久化失败，回滚 UI 状态
       setState(() {
-        _appLogEnabled = oldValue;
+        _appLogEnabled = previousValue;
       });
       Logger.error('保存应用日志设置失败: $e');
     }

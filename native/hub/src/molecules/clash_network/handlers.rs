@@ -122,7 +122,7 @@ fn is_ipc_not_ready_error(error_msg: &str) -> bool {
 }
 
 // 检查错误是否需要重试（连接失效但非 IPC 未就绪）
-fn should_retry_on_error(error_msg: &str, attempt: usize, max_retries: usize) -> bool {
+fn can_retry_on_error(error_msg: &str, attempt: usize, max_retries: usize) -> bool {
     attempt < max_retries
         && !is_ipc_not_ready_error(error_msg)
         && (error_msg.contains("os error")
@@ -201,7 +201,7 @@ async fn handle_ipc_request_with_retry(
                 let error_msg = e.to_string();
 
                 // 检查是否需要重试
-                if should_retry_on_error(&error_msg, attempt, MAX_RETRIES) {
+                if can_retry_on_error(&error_msg, attempt, MAX_RETRIES) {
                     log::warn!(
                         "IPC {} 请求失败（第 {} 次尝试），清空连接池后重试：{}，error：{}",
                         method,

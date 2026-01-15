@@ -1054,19 +1054,19 @@ class SubscriptionProvider extends ChangeNotifier {
 
     try {
       final subscription = _subscriptions[subscriptionIndex];
-      final oldOverrideIds = subscription.overrideIds;
+      final previousOverrideIds = subscription.overrideIds;
 
       final addedCount = overrideIds
-          .where((id) => !oldOverrideIds.contains(id))
+          .where((id) => !previousOverrideIds.contains(id))
           .length;
-      final removedCount = oldOverrideIds
+      final removedCount = previousOverrideIds
           .where((id) => !overrideIds.contains(id))
           .length;
       final hasOverrideChanges = addedCount > 0 || removedCount > 0;
 
       Logger.info(
         '更新订阅覆写 - ${subscription.name}: '
-        '旧=[${oldOverrideIds.join(", ")}], '
+        '旧=[${previousOverrideIds.join(", ")}], '
         '新=[${overrideIds.join(", ")}], '
         '${hasOverrideChanges ? "需要重载" : "仅排序"}',
       );

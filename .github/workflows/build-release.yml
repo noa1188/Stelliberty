@@ -184,9 +184,21 @@ jobs:
               body=$(git log -1 --pretty=format:"%b" "$hash")
 
               # 检查提交信息是否包含"无作用"相关关键词（中英文）
-              # 中文关键词：无作用、无影响、无效果、不影响、无关紧要、无意义、仅调整、仅格式、格式调整、样式调整、空白调整、注释调整
-              # 英文关键词：no effect、no impact、no change、no functional change、cosmetic、formatting only、style only、whitespace、comment only、trivial
-              if echo "$subject $body" | grep -qiE '无作用|无影响|无效果|无实际作用|不影响|无关紧要|无意义|仅调整|仅格式|格式调整|样式调整|空白调整|注释调整|no effect|no impact|no change|no functional change|cosmetic|formatting only|style only|whitespace|comment only|trivial'; then
+              # 中文关键词：
+              #   - 无 X 变化/影响/改动：无作用、无影响、无效果、无实际作用、无功能变化、无功能影响、无功能改动、
+              #     无逻辑变化、无逻辑改动、无逻辑影响、无行为变化、无行为改动、无行为影响、无业务变化、无业务影响、
+              #     无实质变化、无实质改动
+              #   - 不 X 功能：不影响、不改变功能、不影响功能、不涉及功能
+              #   - 仅/纯 X：仅调整、仅格式、仅重命名、仅命名、仅重构、纯重构、纯格式、纯样式
+              #   - X 调整：格式调整、样式调整、空白调整、注释调整、命名调整、缩进调整、导入排序
+              #   - 其他：无关紧要、无意义、命名规范、变量命名、代码风格、代码清理、代码整理
+              # 英文关键词：
+              #   - no X change：no effect、no impact、no change、no functional change、no behavior change、
+              #     no behavioural change、no logic change
+              #   - X only：formatting only、style only、comment only、rename only、refactor only、cleanup only
+              #   - 其他：cosmetic、whitespace、trivial、code style、style fix、lint fix、linting、
+              #     noop、no-op、reformat、reformatting、import sort、organize imports
+              if echo "$subject $body" | grep -qiE '无作用|无影响|无效果|无实际作用|无功能变化|无功能影响|无功能改动|无逻辑变化|无逻辑改动|无逻辑影响|无行为变化|无行为改动|无行为影响|无业务变化|无业务影响|无实质变化|无实质改动|不影响|不改变功能|不影响功能|不涉及功能|仅调整|仅格式|仅重命名|仅命名|仅重构|纯重构|纯格式|纯样式|格式调整|样式调整|空白调整|注释调整|命名调整|缩进调整|导入排序|无关紧要|无意义|命名规范|变量命名|代码风格|代码清理|代码整理|no effect|no impact|no change|no functional change|no behavior change|no behavioural change|no logic change|formatting only|style only|comment only|rename only|refactor only|cleanup only|cosmetic|whitespace|trivial|code style|style fix|lint fix|linting|noop|no-op|reformat|reformatting|import sort|organize imports'; then
                 filtered_count=$((filtered_count + 1))
                 continue
               fi

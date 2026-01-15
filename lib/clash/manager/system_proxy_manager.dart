@@ -13,8 +13,8 @@ class SystemProxyManager {
   Function(bool)? _onSystemProxyStateChanged;
 
   // 设置状态变化回调
-  void setOnSystemProxyStateChanged(Function(bool)? callback) {
-    _onSystemProxyStateChanged = callback;
+  void setOnSystemProxyStateChanged(Function(bool)? handler) {
+    _onSystemProxyStateChanged = handler;
   }
 
   bool _isSystemProxyEnabled = false;

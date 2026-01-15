@@ -30,7 +30,7 @@ class _LazyModeCardState extends State<LazyModeCard> {
   }
 
   Future<void> _toggleLazyMode(bool value) async {
-    final oldValue = _lazyMode;
+    final previousValue = _lazyMode;
     setState(() {
       _lazyMode = value;
     });
@@ -41,7 +41,7 @@ class _LazyModeCardState extends State<LazyModeCard> {
     } catch (e) {
       // 持久化失败，回滚 UI 状态
       setState(() {
-        _lazyMode = oldValue;
+        _lazyMode = previousValue;
       });
       Logger.error('保存懒惰模式设置失败: $e');
     }

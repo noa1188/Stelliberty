@@ -314,7 +314,7 @@ async fn replace_core(
     };
 
     let core_path = Path::new(core_dir).join(core_name);
-    let backup_path = Path::new(core_dir).join(format!("{}_old", core_name));
+    let backup_path = Path::new(core_dir).join(format!("{}_backup", core_name));
 
     // 1. 备份旧核心
     if core_path.exists() {

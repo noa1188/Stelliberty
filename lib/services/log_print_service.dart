@@ -174,7 +174,7 @@ class Logger {
         final size = await file.length();
         if (size > _maxLogFileSize) {
           // 重命名为备份文件
-          final backupPath = '$_logFilePath.old';
+          final backupPath = '$_logFilePath.backup';
           final backupFile = File(backupPath);
 
           // 删除旧备份（若存在）

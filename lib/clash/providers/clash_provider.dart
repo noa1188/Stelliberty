@@ -744,15 +744,17 @@ class ClashProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       // 解析节点
       final parseStopwatch = Stopwatch()..start();
-      final oldProxyNodes = _proxyNodes; // 保存旧节点数据
+      final previousProxyNodes = _proxyNodes; // 保存旧节点数据
       _proxyNodes = {};
       proxies.forEach((name, data) {
         final node = ProxyNode.fromJson(name, data);
 
         // 保留旧节点的延迟值和过期定时器
-        final oldNode = oldProxyNodes[name];
-        if (oldNode != null && oldNode.delay != null && oldNode.delay! != 0) {
-          _proxyNodes[name] = node.copyWith(delay: oldNode.delay);
+        final previousNode = previousProxyNodes[name];
+        if (previousNode != null &&
+            previousNode.delay != null &&
+            previousNode.delay! != 0) {
+          _proxyNodes[name] = node.copyWith(delay: previousNode.delay);
           // 注意：定时器中使用节点名查找，因此不需要重新创建定时器
         } else {
           _proxyNodes[name] = node;

@@ -31,20 +31,20 @@ class LifecycleManager {
   Function(ClashStartMode?)? _onStartModeChanged;
 
   // 设置状态变化回调
-  void setOnCoreStateChanged(Function(CoreState)? callback) {
-    _onCoreStateChanged = callback;
+  void setOnCoreStateChanged(Function(CoreState)? handler) {
+    _onCoreStateChanged = handler;
   }
 
-  void setOnCoreVersionChanged(Function(String)? callback) {
-    _onCoreVersionChanged = callback;
+  void setOnCoreVersionChanged(Function(String)? handler) {
+    _onCoreVersionChanged = handler;
   }
 
-  void setOnConfigPathChanged(Function(String?)? callback) {
-    _onConfigPathChanged = callback;
+  void setOnConfigPathChanged(Function(String?)? handler) {
+    _onConfigPathChanged = handler;
   }
 
-  void setOnStartModeChanged(Function(ClashStartMode?)? callback) {
-    _onStartModeChanged = callback;
+  void setOnStartModeChanged(Function(ClashStartMode?)? handler) {
+    _onStartModeChanged = handler;
   }
 
   // 核心状态（由 Manager 直接管理）

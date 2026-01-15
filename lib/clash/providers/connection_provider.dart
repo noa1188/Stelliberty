@@ -223,11 +223,12 @@ class ConnectionProvider extends ChangeNotifier {
     }
 
     // 创建 ID 集合进行快速比较
-    final oldIds = oldConnections.map((c) => c.id).toSet();
-    final newIds = newConnections.map((c) => c.id).toSet();
+    final previousIds = oldConnections.map((c) => c.id).toSet();
+    final currentIds = newConnections.map((c) => c.id).toSet();
 
     // 比较 ID 集合是否相同
-    return !oldIds.containsAll(newIds) || !newIds.containsAll(oldIds);
+    return !previousIds.containsAll(currentIds) ||
+        !currentIds.containsAll(previousIds);
   }
 
   // 关闭指定连接
