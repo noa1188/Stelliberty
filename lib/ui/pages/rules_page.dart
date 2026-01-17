@@ -6,7 +6,6 @@ import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/constants/spacing.dart';
 import 'package:stelliberty/ui/widgets/modern_tooltip.dart';
 import 'package:stelliberty/ui/widgets/rules/rule_card.dart';
-import 'package:stelliberty/ui/widgets/subscription/provider_viewer_dialog.dart';
 
 class _RulesListSpacing {
   _RulesListSpacing._();
@@ -103,19 +102,6 @@ class _RulesPageState extends State<RulesPage> {
                   ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-            onPressed: () => ProviderViewerDialog.show(context),
-            icon: const Icon(Icons.storage_rounded, size: 18),
-            label: Text(trans.rules.providers),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
             ),
           ),
           const SizedBox(width: 12),
