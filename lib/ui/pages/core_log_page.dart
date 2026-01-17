@@ -6,7 +6,7 @@ import 'package:stelliberty/clash/providers/core_log_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/widgets/core_log/core_log_card.dart';
 import 'package:stelliberty/services/log_print_service.dart';
-import 'package:stelliberty/ui/widgets/modern_tooltip.dart';
+import 'package:stelliberty/ui/common/modern_top_toolbar.dart';
 import 'package:stelliberty/ui/constants/spacing.dart';
 
 // 日志页布局常量
@@ -108,7 +108,9 @@ class _LogPageState extends State<LogPage> {
             height: 32,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(
+                ModernTopToolbarTokens.radius,
+              ),
             ),
           ),
 
@@ -120,7 +122,9 @@ class _LogPageState extends State<LogPage> {
               height: 38,
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(
+                  ModernTopToolbarTokens.radius,
+                ),
               ),
             ),
           ),
@@ -133,19 +137,23 @@ class _LogPageState extends State<LogPage> {
             children: [
               Container(
                 width: 40,
-                height: 40,
+                height: 38,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(
+                    ModernTopToolbarTokens.radius,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
               Container(
                 width: 40,
-                height: 40,
+                height: 38,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(
+                    ModernTopToolbarTokens.radius,
+                  ),
                 ),
               ),
             ],
@@ -158,164 +166,77 @@ class _LogPageState extends State<LogPage> {
   // 构建过滤器和控制栏（扁平化 MD3 风格）
   Widget _buildFilterBar(BuildContext context) {
     final trans = context.translate;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Consumer<LogProvider>(
       builder: (context, provider, child) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          child: Row(
-            children: [
-              // 日志级别过滤按钮组（使用 SegmentedButton 风格）
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
+        return ModernTopToolbar(
+          children: [
+            // 过滤按钮组
+            ModernTopToolbarChipGroup(
+              children: [
+                ModernTopToolbarChip(
+                  label: trans.logs.all_levels,
+                  isSelected: provider.filterLevel == null,
+                  onTap: () => provider.setFilterLevel(null),
                 ),
-                padding: const EdgeInsets.all(3),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildFilterChip(
-                      context,
-                      label: trans.logs.all_levels,
-                      isSelected: provider.filterLevel == null,
-                      onTap: () => provider.setFilterLevel(null),
-                    ),
-                    const SizedBox(width: 4),
-                    _buildFilterChip(
-                      context,
-                      label: ClashLogLevel.debug.getDisplayName(context),
-                      isSelected: provider.filterLevel == ClashLogLevel.debug,
-                      onTap: () => provider.setFilterLevel(ClashLogLevel.debug),
-                    ),
-                    const SizedBox(width: 4),
-                    _buildFilterChip(
-                      context,
-                      label: ClashLogLevel.info.getDisplayName(context),
-                      isSelected: provider.filterLevel == ClashLogLevel.info,
-                      onTap: () => provider.setFilterLevel(ClashLogLevel.info),
-                    ),
-                    const SizedBox(width: 4),
-                    _buildFilterChip(
-                      context,
-                      label: ClashLogLevel.warning.getDisplayName(context),
-                      isSelected: provider.filterLevel == ClashLogLevel.warning,
-                      onTap: () =>
-                          provider.setFilterLevel(ClashLogLevel.warning),
-                    ),
-                    const SizedBox(width: 4),
-                    _buildFilterChip(
-                      context,
-                      label: ClashLogLevel.error.getDisplayName(context),
-                      isSelected: provider.filterLevel == ClashLogLevel.error,
-                      onTap: () => provider.setFilterLevel(ClashLogLevel.error),
-                    ),
-                  ],
+                const SizedBox(width: 4),
+                ModernTopToolbarChip(
+                  label: ClashLogLevel.debug.getDisplayName(context),
+                  isSelected: provider.filterLevel == ClashLogLevel.debug,
+                  onTap: () => provider.setFilterLevel(ClashLogLevel.debug),
                 ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // 搜索框（扁平设计）
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: TextField(
-                    onChanged: (value) => provider.setSearchKeyword(value),
-                    decoration: InputDecoration(
-                      hintText: trans.logs.search_placeholder,
-                      hintStyle: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 20,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 0,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                    ),
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                const SizedBox(width: 4),
+                ModernTopToolbarChip(
+                  label: ClashLogLevel.info.getDisplayName(context),
+                  isSelected: provider.filterLevel == ClashLogLevel.info,
+                  onTap: () => provider.setFilterLevel(ClashLogLevel.info),
                 ),
+                const SizedBox(width: 4),
+                ModernTopToolbarChip(
+                  label: ClashLogLevel.warning.getDisplayName(context),
+                  isSelected: provider.filterLevel == ClashLogLevel.warning,
+                  onTap: () => provider.setFilterLevel(ClashLogLevel.warning),
+                ),
+                const SizedBox(width: 4),
+                ModernTopToolbarChip(
+                  label: ClashLogLevel.error.getDisplayName(context),
+                  isSelected: provider.filterLevel == ClashLogLevel.error,
+                  onTap: () => provider.setFilterLevel(ClashLogLevel.error),
+                ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              // 搜索框
+              child: ModernTopToolbarSearchField(
+                hintText: trans.logs.search_placeholder,
+                onChanged: provider.setSearchKeyword,
               ),
-
-              const SizedBox(width: 12),
-
-              // 控制按钮组（扁平设计，使用 IconButton）
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 暂停/恢复按钮
-                  ModernIconTooltip(
-                    message: provider.isMonitoringPaused
-                        ? trans.connection.resume_btn
-                        : trans.connection.pause_btn,
-                    icon: provider.isMonitoringPaused
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded,
-                    onPressed: provider.togglePause,
-                    iconSize: 20,
-                  ),
-                  const SizedBox(width: 6),
-                  // 清空日志按钮
-                  ModernIconTooltip(
-                    message: trans.logs.clear_logs,
-                    icon: Icons.delete_outline_rounded,
-                    onPressed: provider.logs.isEmpty
-                        ? null
-                        : provider.clearLogs,
-                    iconSize: 20,
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            // 操作按钮组
+            ModernTopToolbarActionGroup(
+              children: [
+                ModernTopToolbarIconButton(
+                  tooltip: provider.isMonitoringPaused
+                      ? trans.connection.resume_btn
+                      : trans.connection.pause_btn,
+                  icon: provider.isMonitoringPaused
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_rounded,
+                  onPressed: provider.togglePause,
+                ),
+                const SizedBox(width: 4),
+                ModernTopToolbarIconButton(
+                  tooltip: trans.logs.clear_logs,
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: provider.logs.isEmpty ? null : provider.clearLogs,
+                ),
+              ],
+            ),
+          ],
         );
       },
-    );
-  }
-
-  // 构建过滤筛选片段（扁平设计）
-  Widget _buildFilterChip(
-    BuildContext context, {
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurfaceVariant,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-      ),
     );
   }
 

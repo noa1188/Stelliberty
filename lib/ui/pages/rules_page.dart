@@ -4,7 +4,7 @@ import 'package:stelliberty/clash/providers/rules_provider.dart';
 import 'package:stelliberty/clash/providers/clash_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/ui/constants/spacing.dart';
-import 'package:stelliberty/ui/widgets/modern_tooltip.dart';
+import 'package:stelliberty/ui/common/modern_top_toolbar.dart';
 import 'package:stelliberty/ui/widgets/rules/rule_card.dart';
 
 class _RulesListSpacing {
@@ -69,95 +69,36 @@ class _RulesPageState extends State<RulesPage> {
 
   Widget _buildControlBar(BuildContext context, RulesProvider provider) {
     final trans = context.translate;
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.rule_rounded,
-                  size: 16,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  trans.rules.total_rules.replaceAll(
-                    '{count}',
-                    provider.rules.length.toString(),
-                  ),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ),
+    return ModernTopToolbar(
+      children: [
+        Expanded(
+          // 搜索框
+          child: ModernTopToolbarSearchField(
+            controller: _searchController,
+            hintText: trans.rules.search_placeholder,
+            onChanged: (value) {
+              if (_isSyncingSearchController) return;
+              provider.setSearchKeyword(value);
+            },
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SizedBox(
-              height: 38,
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  if (_isSyncingSearchController) return;
-                  provider.setSearchKeyword(value);
-                },
-                decoration: InputDecoration(
-                  hintText: trans.rules.search_placeholder,
-                  hintStyle: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 0,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                ),
-                style: const TextStyle(fontSize: 13),
-              ),
+        ),
+        const SizedBox(width: 12),
+        // 操作按钮组
+        ModernTopToolbarActionGroup(
+          children: [
+            ModernTopToolbarIconButton(
+              tooltip: trans.common.refresh,
+              icon: provider.isRefreshing
+                  ? Icons.hourglass_top_rounded
+                  : Icons.refresh_rounded,
+              onPressed: provider.isRefreshing
+                  ? null
+                  : () => provider.refreshRules(showLoading: false),
             ),
-          ),
-          const SizedBox(width: 12),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ModernIconTooltip(
-                message: trans.common.refresh,
-                icon: provider.isRefreshing
-                    ? Icons.hourglass_top_rounded
-                    : Icons.refresh_rounded,
-                onPressed: provider.isRefreshing
-                    ? null
-                    : () => provider.refreshRules(showLoading: false),
-                iconSize: 20,
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 

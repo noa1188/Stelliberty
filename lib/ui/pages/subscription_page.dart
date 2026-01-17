@@ -18,6 +18,7 @@ import 'package:stelliberty/providers/content_provider.dart';
 import 'package:stelliberty/i18n/i18n.dart';
 import 'package:stelliberty/services/log_print_service.dart';
 import 'package:stelliberty/src/bindings/signals/signals.dart';
+import 'package:stelliberty/ui/common/modern_top_toolbar.dart';
 import 'package:stelliberty/ui/constants/spacing.dart';
 
 // 订阅页布局常量
@@ -119,105 +120,85 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
         children: [
-          // 订阅数统计（使用 Badge 风格）
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.rss_feed_rounded,
-                  size: 16,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  trans.subscription.config_count.replaceAll(
-                    '{count}',
-                    data.subscriptionCount.toString(),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _navigateToOverrideManagement(context),
+                    icon: const Icon(Icons.rule, size: 18),
+                    label: Text(trans.subscription.override_management),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: modernTopToolbarButtonShape(),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onPrimaryContainer,
+                  FilledButton.icon(
+                    onPressed: () =>
+                        _showAddSubscriptionDialog(context, provider),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text(trans.subscription.add_config),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: modernTopToolbarButtonShape(),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // 覆写管理按钮
-          OutlinedButton.icon(
-            onPressed: () => _navigateToOverrideManagement(context),
-            icon: const Icon(Icons.rule, size: 18),
-            label: Text(trans.subscription.override_management),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // 添加订阅按钮（FilledButton 风格）
-          FilledButton.icon(
-            onPressed: () => _showAddSubscriptionDialog(context, provider),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(trans.subscription.add_config),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              textStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // 更新所有按钮（FilledTonal 风格）
-          if (data.subscriptionCount > 0)
-            FilledButton.tonalIcon(
-              onPressed: data.isLoading
-                  ? null
-                  : () => _updateAllSubscriptions(context, provider),
-              icon: data.isLoading
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onSecondaryContainer,
+                  if (data.subscriptionCount > 0)
+                    FilledButton.tonalIcon(
+                      onPressed: data.isLoading
+                          ? null
+                          : () => _updateAllSubscriptions(context, provider),
+                      icon: data.isLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.sync_rounded, size: 18),
+                      label: Text(
+                        data.isLoading
+                            ? trans.subscription.updating
+                            : trans.subscription.update_all,
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        shape: modernTopToolbarButtonShape(),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  : const Icon(Icons.sync_rounded, size: 18),
-              label: Text(
-                data.isLoading
-                    ? trans.subscription.updating
-                    : trans.subscription.update_all,
-              ),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                    ),
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
@@ -480,11 +461,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     Subscription subscription,
   ) async {
     final trans = context.translate;
-    final success = await provider.updateSubscription(subscription.id);
+    final isSuccess = await provider.updateSubscription(subscription.id);
 
     if (!context.mounted) return;
 
-    if (success) {
+    if (isSuccess) {
       ModernToast.success(
         trans.subscription.update_success.replaceAll(
           '{name}',
@@ -565,7 +546,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     Subscription subscription,
   ) async {
     final trans = context.translate;
-    final confirmed = await showConfirmDialog(
+    final isConfirmed = await showConfirmDialog(
       context: context,
       title: trans.subscription.delete_confirm,
       message: trans.subscription.delete_confirm_message.replaceAll(
@@ -576,7 +557,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       isDanger: true,
     );
 
-    if (confirmed == true && context.mounted) {
+    if (isConfirmed == true && context.mounted) {
       await provider.deleteSubscription(subscription.id);
     }
   }
@@ -789,13 +770,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       );
 
       // 创建本地配置订阅（使用解析后的配置）
-      final success = await provider.addLocalSubscription(
+      final isSuccess = await provider.addLocalSubscription(
         name: result.name,
         filePath: result.localFilePath!,
         content: parsedConfig,
       );
 
-      return success;
+      return isSuccess;
     } catch (error) {
       Logger.error('导入本地文件失败：$error');
       return false;
